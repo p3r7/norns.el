@@ -12,7 +12,7 @@
 ;;; Commentary:
 ;;
 ;;
-;; For detailed instructions, please look at the README.md at https://github.com/p3r7/emacs.el/blob/master/README.md
+;; For detailed instructions, please look at the README.md at https://github.com/p3r7/norns.el/blob/master/README.md
 
 ;;; Code:
 
