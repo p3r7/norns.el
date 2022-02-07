@@ -58,13 +58,29 @@ Several norns can be managed by this package.
 
 Default value of `norns-access-policy` (`:current-fallback-default`) makes the execution of commands resolve to the currently visited norns instance or fallbacks to the "default" one.
 
-To always use the default instance, change this value to `:default`. Otherwise, to only try the currently visited instance set it to `:current`.
+To always use the default instance (absolute lookup), change this value to `:default`. Otherwise, to only try the currently visited instance (relative lookup) set it to `:current`.
 
 The default norns instance declaration is accessible through vars `norns-host` & `norns-mdns-domain`.
 
 On command execution, the maiden buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-maiden-switch-on-cmd` to `nil`) w/ method `norns-maiden-switch-fn` (defaults to `switch-to-buffer-other-window`).
 
 This new window will not steal focus, but one can change that by setting `norns-maiden-switch-no-focus` to `nil`.
+
+
+## Advanced usages
+
+If you want commands to interact w/ a specific norns instance independently of your current location, just define your own commands like so:
+
+```elisp
+(use-package norns
+  ;;  [...]
+
+  :config
+  (defun norns2-send-command (cmd)
+    (let ((norns-access-policy :default)
+          (norns-host "norns2"))
+      (norns-send-command cmd))))
+```
 
 
 ## Legibility
