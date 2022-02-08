@@ -371,9 +371,6 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
 (define-derived-mode norns-maiden-repl-mode comint-mode "maiden"
   "Major mode for interracting w/ a monome norns' maiden repl."
   :keymap (let ((mmap (make-sparse-keymap)))
-            ;; (define-key mmap "\r" #'norns-send-selection)
-            (define-key mmap (kbd "C-c e R") #'norns-load-current-script)
-            (define-key mmap (kbd "C-c e c") #'norns-send-command)
             mmap)
 
   (setq comint-prompt-regexp (concat "^" (regexp-quote norns-maiden-repl-prompt)))
