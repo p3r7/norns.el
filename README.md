@@ -4,7 +4,7 @@
 
 Control one (or several) monome norns from within Emacs.
 
-Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself.
+Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself (untested).
 
 
 ## Commands
