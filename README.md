@@ -11,9 +11,14 @@ All commands (unless specified otherwise) will analyze if currently visited file
 
 If it's the case, this particular norns is targeted by the command execution. Otherwise the default norns instance (configurable w/ `norns-host` / `norns-mdns-domain` is targeted instead).
 
-A buffer `*maiden/<NORNS_HOSTNAME>*` is spawned, displaying maiden output, and pops in a new window.
+A maiden REPL `*maiden/<NORNS_HOSTNAME>*` is spawned and pops in a new window.
 
 Those behaviors can be customized by tweaking the values of `norns-access-policy` and `norns-maiden-switch-on-cmd`.
+
+
+#### `(norns-maiden-repl)`
+
+Spawn of switch to maiden REPL for norns instance.
 
 
 #### `(norns-send-command CMD)`
@@ -81,6 +86,14 @@ If you want commands to interact w/ a specific norns instance independently of y
           (norns-host "norns2"))
       (norns-send-command cmd))))
 ```
+
+## Implementation details
+
+Major mode for maiden REPL (`norns-maiden-repl-mode`) is based on `comint-mode`.
+
+As maiden communication doesn't rely on a process (but websocket communication instead), we bind a "fake" process and handle output manually by calling `comint-output-filter` (inside of `norns--maiden-output`).
+
+This trick comes from `ielm`.
 
 
 ## Legibility
