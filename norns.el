@@ -222,11 +222,10 @@ Defaults to \"localhost\" if not a TRAMP path."
       (save-excursion
         (end-of-buffer)
 
-        (unless (eq (line-beginning-position) (line-end-position))
-          (setq prompt-entry (buffer-substring (line-beginning-position) (line-end-position))))
-
         ;; remove active prompt
         (unless (eq (norns--comint-true-line-beginning-position) (line-end-position))
+          (unless (eq (line-beginning-position) (line-end-position))
+            (setq prompt-entry (buffer-substring (line-beginning-position) (line-end-position))))
           (delete-region (norns--comint-true-line-beginning-position) (line-end-position)))
 
         ;; insert incoming line + new prompt
