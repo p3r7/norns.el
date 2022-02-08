@@ -55,7 +55,8 @@ To get only the web browsing mode:
 
 ```el
 (use-package norns
-  :quelpa (norns :fetcher github :repo "p3r7/norns"))
+  :quelpa (norns :fetcher github :repo "p3r7/norns")
+  :config (add-hook 'lua-mode-hook #'norns-lua-mode-hook))
 ```
 
 
