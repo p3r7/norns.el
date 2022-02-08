@@ -47,7 +47,7 @@ Send current selection to maiden.
 
 ## Installation
 
-The package is not yet available on [Melpa](https://melpa.org/).
+The package is not yet available on [MELPA](https://melpa.org/).
 
 For now, the recommended way to install is with [use-package](https://github.com/jwiegley/use-package), [quelpa](https://github.com/quelpa/quelpa) and [quelpa-use-package](https://github.com/quelpa/quelpa-use-package).
 
