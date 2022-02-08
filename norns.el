@@ -12,7 +12,7 @@
 ;;; Commentary:
 ;;
 ;;
-;; For detailed instructions, please look at the README.md at https://github.com/p3r7/norns.el/blob/master/README.md
+;; For detailed instructions, please look at the README.md at https://github.com/p3r7/emacs.el/blob/master/README.md
 
 ;;; Code:
 
@@ -38,6 +38,7 @@
 (defvar norns-host "norns")
 (defvar norns-mdns-domain "local")
 (defvar norns-maiden-ws-port 5555)
+(defvar norns-sc-ws-port 5556)
 (defvar norns-maiden-ws-socket-alist nil)
 
 (defvar norns-maiden-buffer-prefix "maiden")
@@ -45,6 +46,11 @@
 (defvar norns-maiden-switch-on-cmd t)
 (defvar norns-maiden-switch-fn #'switch-to-buffer-other-window)
 (defvar norns-maiden-switch-no-focus t)
+
+(defvar norns-lua-mode-lighter " norns")
+
+(defvar norns-maiden-repl-prompt "maiden>> ")
+(defvar norns-maiden-repl-prompt-internal "maiden>> ")
 
 
 
@@ -194,28 +200,35 @@ Defaults to \"localhost\" if not a TRAMP path."
 (defun norns--maiden-output (host txt)
   "Write TXT to maiden buffer for HOST (stored in `norns-maiden-buff-alist')."
   (let* ((maiden-buff (cdr (assoc host norns-maiden-buff-alist)))
-         (visiting-windows (get-buffer-window-list maiden-buff 't))
-         (eof-visiting-windows (--filter (with-selected-window it
-                                           (eq (point) (point-max)))
-                                         visiting-windows)))
+         ;; (visiting-windows (get-buffer-window-list maiden-buff 't))
+         ;; (eof-visiting-windows (--filter (with-selected-window it
+         ;;                                   (eq (point) (point-max)))
+         ;;                                 visiting-windows))
+         (txt (concat txt "\n" norns-maiden-repl-prompt-internal)))
 
     (with-current-buffer maiden-buff
-      (let ((buffer-read-only nil))
-        (save-excursion
-          (end-of-buffer)
-          (insert txt)))
+      ;; (let ((buffer-read-only nil))
+      ;;   (save-excursion
+      ;;     (end-of-buffer)
+      ;;     (insert txt)))
+
+      ;; (comint-output-filter (norns--maiden-process) output)
+      (comint-output-filter (norns--maiden-process) (concat "\n" norns-maiden-repl-prompt-internal))
 
       ;; make visiting windows "follow" (akin to `eshell-scroll-to-bottom-on-output')
-      (when visiting-windows
-        (message "moving: %s" eof-visiting-windows)
-        (--map (set-window-point it (point-max)) eof-visiting-windows)))))
+      ;; (when visiting-windows
+      ;;   (message "moving: %s" eof-visiting-windows)
+      ;;   (--map (set-window-point it (point-max)) eof-visiting-windows))
+      )))
 
 (defun norns--register-maiden-buffer (host)
   (let ((maiden-buff (get-buffer-create (concat "*" norns-maiden-buffer-prefix "/" host "*"))))
+    (with-current-buffer maiden-buff
+      ;; (setq buffer-read-only t)
+      (norns-maiden-repl-mode))
     (add-to-list 'norns-maiden-buff-alist
                  (cons host maiden-buff))
-    (with-current-buffer maiden-buff
-      (setq buffer-read-only t))))
+    maiden-buff))
 
 (defun norns--ensure-host-maiden-buffer-exists (host)
   (let ((buff (cdr (assoc host norns-maiden-buff-alist))))
@@ -317,6 +330,82 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
     (norns-send-command (buffer-substring (region-beginning) (region-end))))
 
    (:default (message "no selection"))))
+
+
+
+;; MAIDEN MAJOR MODE
+
+(defun norns--maiden-input-sender (_proc input)
+  (norns-send-command input))
+
+(defun norns--maiden-process ()
+  (get-buffer-process (current-buffer)))
+
+(defun norns--maiden-set-pm (pos)
+  (set-marker (process-mark (get-buffer-process (current-buffer))) pos))
+
+(defun norns--maiden-pm nil
+  (process-mark (get-buffer-process (current-buffer))))
+
+(define-derived-mode norns-maiden-repl-mode comint-mode "maiden"
+  "Major mode for interracting w/ a monome norns' maiden repl."
+  :keymap (let ((mmap (make-sparse-keymap)))
+            (define-key mmap "\r" #'norns-send-selection)
+            (define-key mmap (kbd "C-c e R") #'norns-load-current-script)
+            (define-key mmap (kbd "C-c e c") #'norns-send-command)
+            mmap)
+
+  (setq comint-prompt-regexp (concat "^" (regexp-quote norns-maiden-repl-prompt)))
+  (setq comint-input-sender #'norns--maiden-input-sender)
+  (setq comint-process-echoes nil)
+
+  ;; A dummy process to keep comint happy. It will never get any input
+  (unless (comint-check-proc (current-buffer))
+    ;; Was cat, but on non-Unix platforms that might not exist, so
+    ;; use hexl instead, which is part of the Emacs distribution.
+    (condition-case nil
+        (start-process "maiden" (current-buffer) "hexl")
+      (file-error (start-process "maiden" (current-buffer) "cat")))
+    (set-process-query-on-exit-flag (norns--maiden-process) nil)
+    (goto-char (point-max))
+
+    ;; output can include raw characters that confuse comint's
+    ;; carriage control code.
+    ;; (set (make-local-variable 'comint-inhibit-carriage-motion) t)
+
+    ;; Add a silly header
+    (norns--maiden-set-pm (point-max))
+    (unless comint-use-prompt-regexp
+      (let ((inhibit-read-only t))
+        (add-text-properties
+         (point-min) (point-max)
+         '(rear-nonsticky t field output inhibit-line-move-field-capture t))))
+    (comint-output-filter (norns--maiden-process) norns-maiden-repl-prompt-internal)
+    (set-marker comint-last-input-start (norns--maiden-pm))
+    (set-process-filter (get-buffer-process (current-buffer)) #'comint-output-filter)))
+
+(defun norns-maiden-repl ()
+  (interactive)
+  (let* ((default-directory (norns--location-from-access-policy))
+         (host (norns--core-curr-host)))
+    (switch-to-buffer (norns--register-maiden-buffer host))))
+
+
+
+;; LUA MINOR MODE
+
+(define-minor-mode norns-lua-mode
+  "Additional shortcuts for norns lua sources."
+  :lighter norns-lua-mode-lighter
+  :keymap (let ((mmap (make-sparse-keymap)))
+            (define-key mmap (kbd "C-c e r") #'norns-send-selection)
+            (define-key mmap (kbd "C-c e R") #'norns-load-current-script)
+            (define-key mmap (kbd "C-c e c") #'norns-send-command)
+            mmap))
+
+(defun norns-lua-mode-hook ()
+  (when (norns--current-host-norns-p)
+    (norns-lua-mode 1)))
 
 
 
