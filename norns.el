@@ -12,7 +12,7 @@
 ;;; Commentary:
 ;;
 ;;
-;; For detailed instructions, please look at the README.md at https://github.com/p3r7/emacs.el/blob/master/README.md
+;; For detailed instructions, please look at the README.md at https://github.com/p3r7/norns.el/blob/master/README.md
 
 ;;; Code:
 
@@ -204,7 +204,8 @@ Defaults to \"localhost\" if not a TRAMP path."
          ;; (eof-visiting-windows (--filter (with-selected-window it
          ;;                                   (eq (point) (point-max)))
          ;;                                 visiting-windows))
-         (txt (concat txt "\n" norns-maiden-repl-prompt-internal)))
+         (output (concat txt "\n" norns-maiden-repl-prompt-internal))
+         )
 
     (with-current-buffer maiden-buff
       ;; (let ((buffer-read-only nil))
@@ -213,7 +214,9 @@ Defaults to \"localhost\" if not a TRAMP path."
       ;;     (insert txt)))
 
       ;; (comint-output-filter (norns--maiden-process) output)
-      (comint-output-filter (norns--maiden-process) (concat "\n" norns-maiden-repl-prompt-internal))
+      (message txt)
+      ;; (message (concat txt "\n" norns-maiden-repl-prompt-internal))
+      (comint-output-filter (norns--maiden-process) output)
 
       ;; make visiting windows "follow" (akin to `eshell-scroll-to-bottom-on-output')
       ;; (when visiting-windows
@@ -232,7 +235,8 @@ Defaults to \"localhost\" if not a TRAMP path."
 
 (defun norns--ensure-host-maiden-buffer-exists (host)
   (let ((buff (cdr (assoc host norns-maiden-buff-alist))))
-    (unless (buffer-live-p buff)
+    (if (buffer-live-p buff)
+        buff
       (norns--register-maiden-buffer host))))
 
 (defun norns--ensure-host-ws-open (host)
@@ -350,7 +354,7 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
 (define-derived-mode norns-maiden-repl-mode comint-mode "maiden"
   "Major mode for interracting w/ a monome norns' maiden repl."
   :keymap (let ((mmap (make-sparse-keymap)))
-            (define-key mmap "\r" #'norns-send-selection)
+            ;; (define-key mmap "\r" #'norns-send-selection)
             (define-key mmap (kbd "C-c e R") #'norns-load-current-script)
             (define-key mmap (kbd "C-c e c") #'norns-send-command)
             mmap)
@@ -388,7 +392,7 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
-    (switch-to-buffer (norns--register-maiden-buffer host))))
+    (switch-to-buffer (norns--ensure-host-maiden-buffer-exists host))))
 
 
 
