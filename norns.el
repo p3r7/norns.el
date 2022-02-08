@@ -197,32 +197,49 @@ Defaults to \"localhost\" if not a TRAMP path."
 
 ;; NORNS - WS (MAIDEN)
 
+(defun norns--comint-true-line-beginning-position ()
+  "`comint-mode' tricks w/ `line-beginning-position' to make it ignore the prompt."
+  (save-excursion
+    (let ((pos (line-beginning-position))
+          (linum (line-number-at-pos)))
+      (beginning-of-line)
+      (left-char)
+      (if (eq linum (line-number-at-pos)) ; on prompt line
+          (line-beginning-position)       ; true position
+        pos))))
+
 (defun norns--maiden-output (host txt)
   "Write TXT to maiden buffer for HOST (stored in `norns-maiden-buff-alist')."
   (let* ((maiden-buff (cdr (assoc host norns-maiden-buff-alist)))
-         ;; (visiting-windows (get-buffer-window-list maiden-buff 't))
-         ;; (eof-visiting-windows (--filter (with-selected-window it
-         ;;                                   (eq (point) (point-max)))
-         ;;                                 visiting-windows))
-         (output (concat txt "\n" norns-maiden-repl-prompt-internal))
-         )
+         (visiting-windows (get-buffer-window-list maiden-buff 't))
+         (eof-visiting-windows (--filter (with-selected-window it
+                                           (eq (point) (point-max)))
+                                         visiting-windows))
+         (output (concat txt norns-maiden-repl-prompt-internal))
+         prompt-entry)
 
     (with-current-buffer maiden-buff
-      ;; (let ((buffer-read-only nil))
-      ;;   (save-excursion
-      ;;     (end-of-buffer)
-      ;;     (insert txt)))
+      (save-excursion
+        (end-of-buffer)
 
-      ;; (comint-output-filter (norns--maiden-process) output)
-      (message txt)
-      ;; (message (concat txt "\n" norns-maiden-repl-prompt-internal))
-      (comint-output-filter (norns--maiden-process) output)
+        (unless (eq (line-beginning-position) (line-end-position))
+          (setq prompt-entry (buffer-substring (line-beginning-position) (line-end-position))))
+
+        ;; remove active prompt
+        (unless (eq (norns--comint-true-line-beginning-position) (line-end-position))
+          (delete-region (norns--comint-true-line-beginning-position) (line-end-position)))
+
+        ;; insert incoming line + new prompt
+        (comint-output-filter (norns--maiden-process) output)
+
+        (when prompt-entry
+          (end-of-buffer)
+          (insert prompt-entry)))
 
       ;; make visiting windows "follow" (akin to `eshell-scroll-to-bottom-on-output')
-      ;; (when visiting-windows
-      ;;   (message "moving: %s" eof-visiting-windows)
-      ;;   (--map (set-window-point it (point-max)) eof-visiting-windows))
-      )))
+      (when visiting-windows
+        (message "moving: %s" eof-visiting-windows)
+        (--map (set-window-point it (point-max)) eof-visiting-windows)))))
 
 (defun norns--register-maiden-buffer (host)
   (let ((maiden-buff (get-buffer-create (concat "*" norns-maiden-buffer-prefix "/" host "*"))))
@@ -293,7 +310,7 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
 
 (defun norns--load-script-helper (scripts)
   "Prompt user to select one of the SCRIPTS and then ask for norns to launch it."
-  (message "SCRIPTS: %s" scripts)
+  ;; (message "SCRIPTS: %s" scripts)
   (let ((scripts-prompt (--map
                          (if (string= (car it) (nth 1 it))
                              it
