@@ -2,7 +2,7 @@
 
 <div align=center><img alt="logo" width="572" height="222" src="icon.png"></div>
 
-Helper Commands for interacting w/ one (or several) monome norns from within Emacs.
+Control one (or several) monome norns from within Emacs.
 
 Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself.
 
