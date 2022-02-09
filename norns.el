@@ -130,85 +130,8 @@ Defaults to \"localhost\" if not a TRAMP path."
     (or remote-host "localhost")))
 
 
-
 
-;; NORNS - PATH
-
-(defun norns--current-host-norns-p ()
-  "Returns t if host of `default-directory' is a norns."
-  (f-directory? (norns--core-trampify-path-maybe "/home/we/dust")))
-
-(defun norns--make-default-norns-tramp-prefix ()
-  (concat "/" tramp-default-method ":"
-          norns-user "@" norns-host (when norns-mdns-domain (concat "." norns-mdns-domain)) ":"))
-
-(defun norns--location-from-access-policy ()
-  (cond
-   ((eq norns-access-policy :current-fallback-default)
-    (or (and (norns--current-host-norns-p) default-directory)
-        (norns--make-default-norns-tramp-prefix)))
-
-   ((eq norns-access-policy :current)
-    (unless (norns--current-host-norns-p)
-      (user-error "Not visiting a norns!"))
-    default-directory)
-
-   (:default
-    (norns--make-default-norns-tramp-prefix))))
-
-
-
-;; NORNS - PATH - SCRIPTS
-
-(defun norns--script-path-p (fp)
-  "Returns t if FP is a script path."
-  (s-matches-p norns-script-rx fp))
-
-(defun norns--script-from-path (fp)
-  "Extract script name from FP."
-  (cdr (s-match norns-script-rx fp)))
-
-(defun norns--in-script-dir-path-p (fp)
-  "Returns t if FP is visiting somewhere under a script dir."
-  (s-matches-p norns-in-script-dir-rx fp))
-
-(defun norns--script-dir-from-path (fp)
-  "Extract script dir name from FP."
-  (nth 1 (s-match norns-in-script-dir-rx fp)))
-
-(defun norns-all-scripts ()
-  "Get list of scripts on visited norns."
-  (let ((default-directory (norns--location-from-access-policy)))
-    (--> (f-glob (norns--core-trampify-path-maybe
-                  (concat norns-script-path-prefix "*/*.lua")))
-         (-map #'norns--core-untrampify-path-maybe it)
-         (-map #'norns--script-from-path it))))
-
-(defun norns-current-scripts ()
-  "Get list of scripts corresponding to visited buffer."
-  (unless (norns--current-host-norns-p)
-    (user-error "Not visiting a norns!"))
-
-  (let* ((fp (norns--core-curr-path)))
-    (unless (s-starts-with? norns-script-path-prefix fp)
-      (user-error "Not visiting a script source!"))
-
-    (cond
-     ((norns--script-path-p fp)
-      (list (norns--script-from-path fp)))
-
-     ((norns--in-script-dir-path-p fp)
-      (let ((script-dir (norns--script-dir-from-path fp)))
-        (--> (f-glob (norns--core-trampify-path-maybe
-                      (concat norns-script-path-prefix script-dir "/*.lua")))
-             (-map #'norns--core-untrampify-path-maybe it)
-             (-map #'norns--script-from-path it))))
-
-     (:default (error "Unexpected error")))))
-
-
-
-;; NORNS - CORE - COMINT
+;; CORE - COMINT
 
 (defun norns--comint-true-line-beginning-position ()
   "`comint-mode' tricks w/ `line-beginning-position' to make it ignore the prompt."
@@ -316,6 +239,83 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
         (end-of-buffer)
         (when norns-repl-switch-no-focus
           (set-frame-selected-window frame win))))))
+
+
+
+;; NORNS - PATH
+
+(defun norns--current-host-norns-p ()
+  "Returns t if host of `default-directory' is a norns."
+  (f-directory? (norns--core-trampify-path-maybe "/home/we/dust")))
+
+(defun norns--make-default-norns-tramp-prefix ()
+  (concat "/" tramp-default-method ":"
+          norns-user "@" norns-host (when norns-mdns-domain (concat "." norns-mdns-domain)) ":"))
+
+(defun norns--location-from-access-policy ()
+  (cond
+   ((eq norns-access-policy :current-fallback-default)
+    (or (and (norns--current-host-norns-p) default-directory)
+        (norns--make-default-norns-tramp-prefix)))
+
+   ((eq norns-access-policy :current)
+    (unless (norns--current-host-norns-p)
+      (user-error "Not visiting a norns!"))
+    default-directory)
+
+   (:default
+    (norns--make-default-norns-tramp-prefix))))
+
+
+
+;; NORNS - PATH - SCRIPTS
+
+(defun norns--script-path-p (fp)
+  "Returns t if FP is a script path."
+  (s-matches-p norns-script-rx fp))
+
+(defun norns--script-from-path (fp)
+  "Extract script name from FP."
+  (cdr (s-match norns-script-rx fp)))
+
+(defun norns--in-script-dir-path-p (fp)
+  "Returns t if FP is visiting somewhere under a script dir."
+  (s-matches-p norns-in-script-dir-rx fp))
+
+(defun norns--script-dir-from-path (fp)
+  "Extract script dir name from FP."
+  (nth 1 (s-match norns-in-script-dir-rx fp)))
+
+(defun norns-all-scripts ()
+  "Get list of scripts on visited norns."
+  (let ((default-directory (norns--location-from-access-policy)))
+    (--> (f-glob (norns--core-trampify-path-maybe
+                  (concat norns-script-path-prefix "*/*.lua")))
+         (-map #'norns--core-untrampify-path-maybe it)
+         (-map #'norns--script-from-path it))))
+
+(defun norns-current-scripts ()
+  "Get list of scripts corresponding to visited buffer."
+  (unless (norns--current-host-norns-p)
+    (user-error "Not visiting a norns!"))
+
+  (let* ((fp (norns--core-curr-path)))
+    (unless (s-starts-with? norns-script-path-prefix fp)
+      (user-error "Not visiting a script source!"))
+
+    (cond
+     ((norns--script-path-p fp)
+      (list (norns--script-from-path fp)))
+
+     ((norns--in-script-dir-path-p fp)
+      (let ((script-dir (norns--script-dir-from-path fp)))
+        (--> (f-glob (norns--core-trampify-path-maybe
+                      (concat norns-script-path-prefix script-dir "/*.lua")))
+             (-map #'norns--core-untrampify-path-maybe it)
+             (-map #'norns--script-from-path it))))
+
+     (:default (error "Unexpected error")))))
+
 
 
 
