@@ -13,19 +13,26 @@ All commands (unless specified otherwise) will analyze if currently visited file
 
 If it's the case, this particular norns is targeted by the command execution. Otherwise the default norns instance (configurable w/ `norns-host` / `norns-mdns-domain` is targeted instead).
 
-A maiden REPL `*maiden/<NORNS_HOSTNAME>*` is spawned and pops in a new window.
+A maiden REPL (`*maiden/<NORNS_HOSTNAME>*`) or SuperCollider REPL (`*norns-sc/<NORNS_HOSTNAME>*`) is spawned and pops in a new window.
 
-Those behaviors can be customized by tweaking the values of `norns-access-policy` and `norns-maiden-switch-on-cmd`.
-
-
-#### `(norns-maiden-repl)`
-
-Spawn of switch to maiden REPL for norns instance.
+Those behaviors can be customized by tweaking the values of `norns-access-policy` and `norns-repl-switch-on-cmd`.
 
 
-#### `(norns-send-command CMD)`
+#### `(norns-maiden-repl)` / `(norns-sc-repl)`
 
-Send raw text `CMD` to maiden.
+Spawn and switch to maiden REPL / SuperCollider REPL for norns instance.
+
+
+#### `(norns-maiden-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
+
+Prompt user to enter raw text `TXT` command and sends it to maiden / SuperCollider.
+
+Generic version (`norns-send`) auto-selects the right command according to current buffer mode.
+
+
+#### `(norns-maiden-send-selection)` / `(norns-sc-send-selection)` / `(norns-send-selection)`
+
+Same as above, but acts on selection (*active region* in Emacs lingo).
 
 
 #### `(norns-load-current-script)`
@@ -40,11 +47,6 @@ Will fail if currently visited file is not part of a norns script.
 Prompt user for list of available norns scripts and launch the one selected.
 
 
-#### `(norns-send-selection)`
-
-Send current selection to maiden.
-
-
 ## Installation
 
 The package is not yet available on [MELPA](https://melpa.org/).
@@ -56,7 +58,9 @@ To get only the web browsing mode:
 ```el
 (use-package norns
   :quelpa (norns :fetcher github :repo "p3r7/norns.el")
-  :config (add-hook 'lua-mode-hook #'norns-lua-mode-hook))
+  :config
+  (add-hook 'lua-mode-hook #'norns-mode-hook)
+  (add-hook 'sclang-mode-mode-hook #'norns-mode-hook))
 ```
 
 
@@ -70,9 +74,9 @@ To always use the default instance (absolute lookup), change this value to `:def
 
 The default norns instance declaration is accessible through vars `norns-host` & `norns-mdns-domain`.
 
-On command execution, the maiden buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-maiden-switch-on-cmd` to `nil`) w/ method `norns-maiden-switch-fn` (defaults to `switch-to-buffer-other-window`).
+On command execution, the maiden or SuperCollider buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-repl-switch-on-cmd` to `nil`) w/ method `norns-repl-switch-fn` (defaults to `switch-to-buffer-other-window`).
 
-This new window will not steal focus, but one can change that by setting `norns-maiden-switch-no-focus` to `nil`.
+This new window will not steal focus, but one can change that by setting `norns-repl-switch-no-focus` to `nil`.
 
 
 ## Advanced usages
