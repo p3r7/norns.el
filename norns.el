@@ -369,7 +369,6 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
 
 (defun norns--load-script-helper (scripts)
   "Prompt user to select one of the SCRIPTS and then ask for norns to launch it."
-  ;; (message "SCRIPTS: %s" scripts)
   (let ((scripts-prompt (--map
                          (if (string= (car it) (nth 1 it))
                              it
