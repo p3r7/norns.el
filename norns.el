@@ -574,7 +574,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
   (interactive)
   (let ((default-directory (norns--location-from-access-policy)))
     (shell-command "bash /home/we/norns/stop.sh && bash /home/we/norns/start.sh")
-    (maiden-repl)))
+    (norns-maiden-repl)))
 
 (defun norns-reboot ()
   (interactive)
