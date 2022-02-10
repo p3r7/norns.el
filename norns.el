@@ -341,11 +341,16 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
 (defun norns-maiden-send (cmd)
   "Send CMD to norns via maiden and eventually pop a window to the REPL buffer."
   (interactive "s> ")
-  (norns--ws-send cmd
-                  'norns-maiden-ws-socket-alist
-                  'norns-maiden-buff-alist
-                  #'norns--ensure-host-maiden-ws-open
-                  #'norns--ensure-host-maiden-buffer-exists))
+  (cond
+   ((string= ";restart" cmd)
+    (norns-restart))
+
+   (:default
+    (norns--ws-send cmd
+                    'norns-maiden-ws-socket-alist
+                    'norns-maiden-buff-alist
+                    #'norns--ensure-host-maiden-ws-open
+                    #'norns--ensure-host-maiden-buffer-exists))))
 
 (defun norns-maiden-send-selection ()
   "Send selected buffer region to maiden."
@@ -573,22 +578,28 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 (defun norns-restart ()
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
+         (dd default-directory)
          (host (norns--core-curr-host)))
-    ;; (shell-command "bash /home/we/norns/stop.sh && bash /home/we/norns/start.sh")
     (shell-command "nohup systemctl restart norns-sclang > /dev/null")
     (shell-command "nohup systemctl restart norns-crone > /dev/null")
     (shell-command "nohup systemctl restart norns-matron > /dev/null")
-    (let ((frame (selected-frame))
-          (win (selected-window))
-          (buff (norns--ensure-host-maiden-buffer-exists ,host))
-          (visiting-windows (get-buffer-window-list comint-buff)))
-      (norns--ensure-host-maiden-ws-open)
+    (let* ((frame (selected-frame))
+           (win (selected-window))
+           (buff (norns--ensure-host-maiden-buffer-exists host))
+           (visiting-windows (get-buffer-window-list buff)))
       (when (and norns-repl-switch-on-cmd
                  (null visiting-windows))
         (funcall norns-repl-switch-fn buff)
         (end-of-buffer)
         (when norns-repl-switch-no-focus
-          (set-frame-selected-window frame win))))))
+          (set-frame-selected-window frame win))))
+
+    ;; NB: maiden seems to need a "ping" to send its start logs
+    (run-at-time
+     0.1 nil
+     `(lambda ()
+        (let ((default-directory ,dd))
+          (norns-maiden-send ""))))))
 
 (defun norns-reboot ()
   (interactive)
