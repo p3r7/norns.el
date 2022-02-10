@@ -568,5 +568,23 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 
 
 
+;; SYSTEM HELPER COMMANDS
+
+(defun norns-restart ()
+  (interactive)
+  (let ((default-directory (norns--location-from-access-policy)))
+    (shell-command "bash /home/we/norns/stop.sh && bash /home/we/norns/start.sh")
+    (maiden-repl)))
+
+(defun norns-reboot ()
+  (interactive)
+  (let* ((default-directory (norns--location-from-access-policy))
+         (host (norns--core-curr-host)))
+    (when (string= host "localhost")
+      (user-error "You can't restart norns from within Emacs when it is running from norns!"))
+    (shell-command "sudo reboot now")))
+
+
+
 
 (provide 'norns)
