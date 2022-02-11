@@ -46,6 +46,8 @@
 (defvar norns-maiden-buff-alist nil)
 (defvar norns-maiden-repl-prompt "maiden>> ")
 (defvar norns-maiden-repl-prompt-internal "maiden>> ")
+(defvar norns-lua-lib-inject-dir "/tmp/")
+(defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 
 (defvar norns-sc-ws-port 5556)
 (defvar norns-sc-ws-socket-alist nil)
@@ -361,6 +363,24 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
     (deactivate-mark))
 
    (:default (message "no selection"))))
+
+(defun norns--inject-inspect-lib ()
+  "Inject inspect.lua library onto norns."
+  (let* ((default-directory (norns--location-from-access-policy))
+         (dest-file (norns--core-trampify-path-maybe (concat norns-lua-lib-inject-dir "inspect.lua"))))
+    (unless (file-exists-p dest-file)
+      (url-copy-file norns-lua-lib-inspect-url dest-file))))
+
+(defun norns-maiden-inspect-symbol (symbol)
+  (interactive (list
+                (let ((tap (thing-at-point 'symbol)))
+                  (if tap
+                      (read-string (format "var (%s): " tap)
+                                   nil nil tap)
+                    (read-string "var: ")))))
+  (norns--inject-inspect-lib)
+  (norns-maiden-send (s-join "; " (list "local inspect = require '/tmp/inspect'"
+                                        (concat "print(inspect(" symbol "))")))))
 
 
 
