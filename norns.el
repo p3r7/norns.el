@@ -359,7 +359,9 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
   (interactive)
   (cond
    ((use-region-p)
-    (norns-maiden-send (buffer-substring (region-beginning) (region-end)))
+    (--> (buffer-substring (region-beginning) (region-end))
+         (s-replace "\n" "; " it)
+         (norns-maiden-send it))
     (deactivate-mark))
 
    (:default (message "no selection"))))
