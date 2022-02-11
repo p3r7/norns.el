@@ -357,7 +357,8 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
   (interactive)
   (cond
    ((use-region-p)
-    (norns-maiden-send (buffer-substring (region-beginning) (region-end))))
+    (norns-maiden-send (buffer-substring (region-beginning) (region-end)))
+    (deactivate-mark))
 
    (:default (message "no selection"))))
 
@@ -483,7 +484,8 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
   (interactive)
   (cond
    ((use-region-p)
-    (norns-sc-send (buffer-substring (region-beginning) (region-end))))
+    (norns-sc-send (buffer-substring (region-beginning) (region-end)))
+    (deactivate-mark))
 
    (:default (message "no selection"))))
 
