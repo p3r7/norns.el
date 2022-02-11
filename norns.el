@@ -348,7 +348,7 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
     (norns-restart))
 
    (:default
-    (norns--ws-send cmd
+    (norns--ws-send (s-replace "\n" "; " cmd)
                     'norns-maiden-ws-socket-alist
                     'norns-maiden-buff-alist
                     #'norns--ensure-host-maiden-ws-open
@@ -359,9 +359,7 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
   (interactive)
   (cond
    ((use-region-p)
-    (--> (buffer-substring (region-beginning) (region-end))
-         (s-replace "\n" "; " it)
-         (norns-maiden-send it))
+    (norns-maiden-send (buffer-substring (region-beginning) (region-end)))
     (deactivate-mark))
 
    (:default (message "no selection"))))
