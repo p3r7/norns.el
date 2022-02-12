@@ -5,7 +5,7 @@
 ;; Version: 0.0.1
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
-;; Package-Requires: ((emacs "27.2")(dash "2.17.0")(s "1.12.0")(f "20210624.1103")(websocket "20210110.17"))
+;; Package-Requires: ((emacs "27.2")(dash "2.17.0")(s "1.12.0")(f "20210624.1103")(websocket "20210110.17")(osc "0.4"))
 ;;
 ;; SPDX-License-Identifier: MIT
 
@@ -21,14 +21,12 @@
 ;; DEPS
 
 (require 'dash)
-
 (require 's)
 (require 'rx)
-
 (require 'f)
-(require 'websocket)
 
-(require 'lua-mode)
+(require 'websocket)
+(require 'osc)
 
 
 
@@ -39,6 +37,8 @@
 (defvar norns-user "we")
 (defvar norns-host "norns")
 (defvar norns-mdns-domain "local")
+
+(defvar norns-osc-port 10111)
 
 (defvar norns-maiden-ws-port 5555)
 (defvar norns-maiden-ws-socket-alist nil)
@@ -630,6 +630,27 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
     (when (string= host "localhost")
       (user-error "You can't restart norns from within Emacs when it is running from norns!"))
     (shell-command "sudo reboot now")))
+
+
+
+;; USER INPUT
+
+(defun norns--osc-send (p &rest args)
+  (let* ((default-directory (norns--location-from-access-policy))
+         (host (norns--core-curr-host))
+         (client (osc-make-client host norns-osc-port)))
+    (apply #'osc-send-message client p args)
+    (delete-process client)))
+
+(defun norns-key (n z)
+  (norns--osc-send "/remote/key" n z))
+
+(defun norns-key-toggle (n)
+  (norns-key n 1)
+  (norns-key n 0))
+
+(defun norns-enc (n delta)
+  (norns--osc-send "/remote/enc" n delta))
 
 
 
