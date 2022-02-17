@@ -34,36 +34,36 @@
 
 (defvar norns-access-policy :current-fallback-default)
 
-(defvar norns-user "we")
-(defvar norns-host "norns")
-(defvar norns-mdns-domain "local")
+(defvar norns-user "we" "norns user.")
+(defvar norns-host "norns" "Default norns hostname.")
+(defvar norns-mdns-domain "local" "Default norns mDNS (aka zeroconf).")
 
-(defvar norns-osc-port 10111)
+(defvar norns-osc-port 10111 "norns OSC protocol port.")
 
-(defvar norns-maiden-ws-port 5555)
-(defvar norns-maiden-ws-socket-alist nil)
-(defvar norns-maiden-buffer-prefix "maiden")
-(defvar norns-maiden-buff-alist nil)
-(defvar norns-maiden-repl-prompt "maiden>> ")
-(defvar norns-maiden-repl-prompt-internal "maiden>> ")
+(defvar norns-maiden-ws-port 5555 "norns maiden REPL websocket port.")
+(defvar norns-maiden-ws-socket-alist nil "Alist containing HOST / MAIDEN-WS-SOCKET associations.")
+(defvar norns-maiden-buffer-prefix "maiden" "Prefix for name of maiden REPL buffers.")
+(defvar norns-maiden-buff-alist nil "Alist containing HOST / MAIDEN-COMINT-BUFFER associations.")
+(defvar norns-maiden-repl-prompt "maiden>> " "maiden REPL buffer prompt.")
+(defconst norns-maiden-repl-prompt-internal "maiden>> " "Version of `norns-maiden-repl-prompt' for handling when it gets redefined at runtime.")
 (defvar norns-lua-lib-inject-dir "/tmp/")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 
-(defvar norns-sc-ws-port 5556)
-(defvar norns-sc-ws-socket-alist nil)
-(defvar norns-sc-buffer-prefix "norns-sc")
-(defvar norns-sc-buff-alist nil)
-(defvar norns-sc-repl-prompt "sc>> ")
-(defvar norns-sc-repl-prompt-internal "sc>> ")
+(defvar norns-sc-ws-port 5556 "norns SuperCollider REPL websocket port.")
+(defvar norns-sc-ws-socket-alist nil "Alist containing HOST / SC-WS-SOCKET associations.")
+(defvar norns-sc-buffer-prefix "norns-sc" "Prefix for name of SuperCollider REPL buffers.")
+(defvar norns-sc-buff-alist nil "Alist containing HOST / SC-COMINT-BUFFER associations.")
+(defvar norns-sc-repl-prompt "sc>> " "SuperCollider REPL buffer prompt.")
+(defconst norns-sc-repl-prompt-internal "sc>> " "Version of `norns-sc-repl-prompt' for handling when it gets redefined at runtime.")
 
-(defvar norns-repl-switch-on-cmd t)
-(defvar norns-repl-switch-fn #'switch-to-buffer-other-window)
-(defvar norns-repl-switch-no-focus t)
+(defvar norns-repl-switch-on-cmd t "If non-nil, switch to maiden/SuperCollider REPL buffer after sending it a command.")
+(defvar norns-repl-switch-fn #'switch-to-buffer-other-window "Function to use when `norns-repl-switch-on-cmd' is non-nil.")
+(defvar norns-repl-switch-no-focus t "If non-nil, don't have popping REPL window steal focus after calling `norns-repl-switch-fn'.")
 
-(defvar norns-maiden-mode-lighter "maiden-repl")
-(defvar norns-sc-mode-lighter "norns-sc-repl")
+(defvar norns-maiden-mode-lighter "maiden-repl" "maiden REPL major mode lighter.")
+(defvar norns-sc-mode-lighter "norns-sc-repl" "SuperCollider REPL major mode lighter.")
 
-(defvar norns-mode-lighter " norns")
+(defvar norns-mode-lighter " norns" "norns minor mode lighter.")
 
 
 
@@ -92,7 +92,7 @@
 
 (defun norns--core-curr-fq-path ()
   "Get path (i.e. file-name in Emacs lingo) of current buffer.
-it is fully qualified, i.e. w/ a TRAMP prefix if the connexion is remote."
+it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
   (if (member major-mode '(dired-mode shell-mode))
       default-directory
     (buffer-file-name)))
@@ -125,7 +125,7 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connexion is remote."
   (norns--core-untrampify-path-maybe (norns--core-curr-fq-path)))
 
 (defun norns--core-curr-host ()
-  "Get current hostame.
+  "Get current hostname.
 Defaults to \"localhost\" if not a TRAMP path."
   (let* ((remote-host (--> (file-remote-p default-directory 'host)
                            (s-chop-suffix (concat "." norns-mdns-domain) it))))
@@ -133,10 +133,12 @@ Defaults to \"localhost\" if not a TRAMP path."
 
 
 
-;; CORE - COMINT
+;; CORE - WEBSOCKET-BACKED COMINT BUFFER
 
 (defun norns--comint-true-line-beginning-position ()
-  "`comint-mode' tricks w/ `line-beginning-position' to make it ignore the prompt."
+  "Get true line beginning position.
+Indeed, `comint-mode' tricks w/ `line-beginning-position' to make
+it ignore the prompt."
   (save-excursion
     (let ((pos (line-beginning-position))
           (linum (line-number-at-pos)))
@@ -147,16 +149,23 @@ Defaults to \"localhost\" if not a TRAMP path."
         pos))))
 
 (defun norns--comint-process ()
+  "Get (dummy) process for (current) comint buffer."
   (get-buffer-process (current-buffer)))
 
 (defun norns--comint-set-pm (pos)
+  "Set marker POS for (dummy) process in (current) comint buffer."
   (set-marker (process-mark (get-buffer-process (current-buffer))) pos))
 
 (defun norns--comint-pm nil
+  "Get marker for last output of (dummy) process "
   (process-mark (get-buffer-process (current-buffer))))
 
 (defun norns--comint-async-output-for-host (host-buff-alist host prompt txt)
-  "Write TXT to comint buffer for HOST (stored in value of symbol HOST-BUFF-ALIST)."
+  "Write TXT to comint buffer for HOST (stored in value of symbol
+HOST-BUFF-ALIST).
+
+Ends output with a PROMPT to make comint believe it was a
+standard command execution."
   (let* ((buff (cdr (assoc host (symbol-value host-buff-alist))))
          (visiting-windows (get-buffer-window-list buff 't))
          (eof-visiting-windows (--filter (with-selected-window it
@@ -188,6 +197,10 @@ Defaults to \"localhost\" if not a TRAMP path."
         (--map (set-window-point it (point-max)) eof-visiting-windows)))))
 
 (defun norns--comint-register-buffer-for-host (host-buff-alist host prefix comint-mode)
+  "Create new comint buffer for HOST and register it in HOST-BUFF-ALIST.
+
+This buffer will have major COMINT-MODE activated on it and be
+named \"*PREFIX/HOST*\"."
   (let ((buff (get-buffer-create (concat "*" prefix "/" host "*"))))
     (with-current-buffer buff
       (funcall comint-mode))
@@ -196,6 +209,10 @@ Defaults to \"localhost\" if not a TRAMP path."
     buff))
 
 (defun norns--comint-ensure-buffer-for-host-exists (host-buff-alist host buff-register-fn)
+  "Ensure comint buffer for HOST exists.
+
+If not, create it and register it in HOST-BUFF-ALIST by calling
+BUFF-REGISTER-FN."
   (let ((buff (cdr (assoc host (symbol-value host-buff-alist)))))
     (if (buffer-live-p buff)
         buff
@@ -204,8 +221,15 @@ Defaults to \"localhost\" if not a TRAMP path."
 (defun norns--comint-ensure-host-ws-open (host-ws-alist
                                           host ws-port
                                           ensure-host-buffer-exists-fn comint-output-fn)
-  "Ensure socket for currently visited host (stored in value of symbol HOST-WS-ALIST) is open.
-Also ensures the existence of associated comint output buffer by calling ENSURE-HOST-BUFFER-EXISTS-FN."
+  "Ensure websocket for norns HOST (stored in value of symbol HOST-WS-ALIST) is open.
+
+Also ensures the existence of associated comint output buffer by
+calling ENSURE-HOST-BUFFER-EXISTS-FN.  WS-PORT is the remote
+websocket listening port.
+
+COMINT-OUTPUT-FN is the function that
+gets called to pipe websocket output to the associated comint
+buffer."
   (unless (websocket-openp (cdr (assoc host (symbol-value host-ws-alist))))
     (add-to-list
      host-ws-alist
@@ -225,7 +249,17 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
 (defun norns--ws-send (cmd
                        host-ws-alist host-comint-buff-alist
                        ensure-ws-open-fn ensure-comint-buff-exists-fn)
-  "Send CMD to websocket and eventually pop a window to associated comint buffer."
+  "Send CMD to current norns via websocket and eventually pop a window to its associated comint buffer.
+
+Current norns is determined with
+`norns--location-from-access-policy', depending on the value of
+`norns-access-policy'.
+
+From it the associated websocket and comint buffer are retrieved
+from HOST-WS-ALIST and HOST-COMINT-BUFF-ALIST, respectively.
+
+We ensure those two exist by calling ENSURE-WS-OPEN-FN and
+ENSURE-COMINT-BUFF-EXISTS-FN."
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
     (funcall ensure-ws-open-fn host)
@@ -247,14 +281,26 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
 ;; NORNS - PATH
 
 (defun norns--current-host-norns-p ()
-  "Returns t if host of `default-directory' is a norns."
+  "Return t if host of `default-directory' is a norns."
   (f-directory? (norns--core-trampify-path-maybe "/home/we/dust")))
 
 (defun norns--make-default-norns-tramp-prefix ()
+  "Build the tramp prefix for default norns (`norns-user' @ `norns-host')."
   (concat "/" tramp-default-method ":"
           norns-user "@" norns-host (when norns-mdns-domain (concat "." norns-mdns-domain)) ":"))
 
 (defun norns--location-from-access-policy ()
+  "Find a norns file path to move to (by let-binding `default-directory') based on `norns-access-policy'.
+
+With default value \":current-fallback-default\", tries first on
+`default-directory' (assuming we're visiting a norns), then
+fallback to remote `norns-host'.
+
+With value \"current\", will only try `default-directory' and
+fail if it's not a norns.
+
+With value \"default\", will always ignore `default-directory'
+and use remote `norns-host'."
   (cond
    ((eq norns-access-policy :current-fallback-default)
     (or (and (norns--current-host-norns-p) default-directory)
@@ -273,7 +319,7 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
 ;; NORNS - PATH - SCRIPTS
 
 (defun norns--script-path-p (fp)
-  "Returns t if FP is a script path."
+  "Return t if FP is a script path."
   (s-matches-p norns-script-rx fp))
 
 (defun norns--script-from-path (fp)
@@ -281,7 +327,7 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
   (cdr (s-match norns-script-rx fp)))
 
 (defun norns--in-script-dir-path-p (fp)
-  "Returns t if FP is visiting somewhere under a script dir."
+  "Return t if FP is visiting somewhere under a script dir."
   (s-matches-p norns-in-script-dir-rx fp))
 
 (defun norns--script-dir-from-path (fp)
@@ -289,7 +335,11 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
   (nth 1 (s-match norns-in-script-dir-rx fp)))
 
 (defun norns-all-scripts ()
-  "Get list of scripts on visited norns."
+  "Get list of scripts on current norns.
+
+Current norns is determined with
+`norns--location-from-access-policy', depending on the value of
+`norns-access-policy'."
   (let ((default-directory (norns--location-from-access-policy)))
     (--> (f-glob (norns--core-trampify-path-maybe
                   (concat norns-script-path-prefix "*/*.lua")))
@@ -297,7 +347,7 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
          (-map #'norns--script-from-path it))))
 
 (defun norns-current-scripts ()
-  "Get list of scripts corresponding to visited buffer."
+  "Get list of scripts corresponding to currently visited buffer."
   (unless (norns--current-host-norns-p)
     (user-error "Not visiting a norns!"))
 
@@ -324,17 +374,22 @@ Also ensures the existence of associated comint output buffer by calling ENSURE-
 ;; NORNS - MAIDEN
 
 (defun norns--maiden-output (host txt)
+  "Function to forward output TXT from maiden websocket to the corresponding comint buffer for HOST."
   (norns--comint-async-output-for-host 'norns-maiden-buff-alist host norns-maiden-repl-prompt-internal txt))
 
 (defun norns--register-maiden-buffer (host)
+  "Create a new maiden comint buffer for HOST and register it in `norns-maiden-buff-alist'."
   (norns--comint-register-buffer-for-host 'norns-maiden-buff-alist host norns-maiden-buffer-prefix #'norns-maiden-repl-mode))
 
 (defun norns--ensure-host-maiden-buffer-exists (host)
+  "Ensure that a maiden comint buffer for HOST exists in `norns-maiden-buff-alist'."
   (norns--comint-ensure-buffer-for-host-exists 'norns-maiden-buff-alist host #'norns--register-maiden-buffer))
 
 (defun norns--ensure-host-maiden-ws-open (host)
-  "Ensure socket for currently visited host (stored in `norns-maiden-ws-socket-alist') is open.
-Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff-alist')."
+  "Ensure socket for norns HOST (stored in `norns-maiden-ws-socket-alist') is open.
+
+Also ensures the existence of maiden output buffer (stored in
+`norns-maiden-buff-alist')."
   (norns--comint-ensure-host-ws-open 'norns-maiden-ws-socket-alist host
                                      norns-maiden-ws-port
                                      #'norns--ensure-host-maiden-buffer-exists
@@ -372,6 +427,10 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
       (url-copy-file norns-lua-lib-inspect-url dest-file))))
 
 (defun norns-maiden-inspect-symbol (symbol)
+  "Inspect value of SYMBOL at point in maiden.
+If no symbol at point, prompt.
+
+Please note that it will only work properly for non-local lua vars."
   (interactive (list
                 (let ((tap (thing-at-point 'symbol)))
                   (if tap
@@ -410,8 +469,11 @@ Also ensures the existence of maiden output buffer (stored in `norns-maiden-buff
       (message "canceled"))))
 
 (defun norns-load-script ()
-  "Prompt user to select any of the existing scripts and then ask for norns to launch it.
-Tries first on `default-directory' (assuming we're visiting a norns), then fallback to remote `norns-host'."
+  "Prompt user to select any of the existing scripts and then ask for current norns to launch it.
+
+Current norns is determined with
+`norns--location-from-access-policy', depending on the value of
+`norns-access-policy'."
   (interactive)
   (norns--load-script-helper (norns-all-scripts)))
 
@@ -427,10 +489,12 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
 ;; MAJOR MODE - MAIDEN REPL
 
 (defun norns--maiden-input-sender (_proc input)
+  "Send comint INPUT to norns' maiden (via websocket).
+Output is processed asyncronously by `norns--maiden-output'."
   (norns-maiden-send input))
 
 (define-derived-mode norns-maiden-repl-mode comint-mode norns-maiden-mode-lighter
-  "Major mode for interracting w/ a monome norns' maiden repl."
+  "Major mode for interracting w/ a monome norns' maiden REPL."
   :keymap (let ((mmap (make-sparse-keymap)))
             mmap)
 
@@ -448,11 +512,6 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
     (set-process-query-on-exit-flag (norns--comint-process) nil)
     (goto-char (point-max))
 
-    ;; output can include raw characters that confuse comint's
-    ;; carriage control code.
-    ;; (set (make-local-variable 'comint-inhibit-carriage-motion) t)
-
-    ;; Add a silly header
     (norns--comint-set-pm (point-max))
     (unless comint-use-prompt-regexp
       (let ((inhibit-read-only t))
@@ -464,6 +523,10 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
     (set-process-filter (get-buffer-process (current-buffer)) #'comint-output-filter)))
 
 (defun norns-maiden-repl ()
+  "Connect to the maiden REPL for current norns and switch to it.
+If already connected, just switch to the buffer.
+
+Current norns is determined depending on the value of `norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
@@ -474,24 +537,29 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
 ;; NORNS - SC
 
 (defun norns--sc-output (host txt)
+  "Function to forward output TXT from SuperCollider websocket to the corresponding comint buffer for HOST."
   (norns--comint-async-output-for-host 'norns-sc-buff-alist host norns-sc-repl-prompt-internal txt))
 
 (defun norns--register-sc-buffer (host)
+  "Create a new SuperCollider comint buffer for HOST and register it in `norns-sc-buff-alist'."
   (norns--comint-register-buffer-for-host 'norns-sc-buff-alist host norns-sc-buffer-prefix #'norns-sc-repl-mode))
 
 (defun norns--ensure-host-sc-buffer-exists (host)
+  "Ensure that a SuperCollider comint buffer for HOST exists in `norns-sc-buff-alist'."
   (norns--comint-ensure-buffer-for-host-exists 'norns-sc-buff-alist host #'norns--register-sc-buffer))
 
 (defun norns--ensure-host-sc-ws-open (host)
-  "Ensure socket for currently visited host (stored in `norns-sc-ws-socket-alist') is open.
-Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')."
+  "Ensure socket for norns HOST (stored in `norns-sc-ws-socket-alist') is open.
+
+Also ensures the existence of SuperCollider output buffer (stored
+in `norns-sc-buff-alist')."
   (norns--comint-ensure-host-ws-open 'norns-sc-ws-socket-alist host
                                      norns-sc-ws-port
                                      #'norns--ensure-host-sc-buffer-exists
                                      #'norns--sc-output))
 
 (defun norns-sc-send (cmd)
-  "Send CMD to norns via sc and eventually pop a window to the REPL buffer."
+  "Send CMD to norns via SuperCollider and eventually pop a window to the REPL buffer."
   (interactive "s> ")
   (norns--ws-send (concat cmd "")
                   'norns-sc-ws-socket-alist
@@ -500,7 +568,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
                   #'norns--ensure-host-sc-buffer-exists))
 
 (defun norns-sc-send-selection ()
-  "Send selected buffer region to sc REPL."
+  "Send selected buffer region to SuperCollider REPL."
   (interactive)
   (cond
    ((use-region-p)
@@ -514,10 +582,12 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 ;; MAJOR MODE - SC REPL
 
 (defun norns--sc-input-sender (_proc input)
+  "Send comint INPUT to norns' SuperCollider (via websocket).
+Output is processed asyncronously by `norns--sc-output'."
   (norns-sc-send input))
 
 (define-derived-mode norns-sc-repl-mode comint-mode norns-sc-mode-lighter
-  "Major mode for interracting w/ a monome norns' sc repl."
+  "Major mode for interracting w/ a monome norns' SuperCollider REPL."
   :keymap (let ((mmap (make-sparse-keymap)))
             mmap)
 
@@ -535,11 +605,6 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
     (set-process-query-on-exit-flag (norns--comint-process) nil)
     (goto-char (point-max))
 
-    ;; output can include raw characters that confuse comint's
-    ;; carriage control code.
-    ;; (set (make-local-variable 'comint-inhibit-carriage-motion) t)
-
-    ;; Add a silly header
     (norns--comint-set-pm (point-max))
     (unless comint-use-prompt-regexp
       (let ((inhibit-read-only t))
@@ -551,6 +616,10 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
     (set-process-filter (get-buffer-process (current-buffer)) #'comint-output-filter)))
 
 (defun norns-sc-repl ()
+  "Connect to the SuperCollider REPL for current norns and switch to it.
+If already connected, just switch to the buffer.
+
+Current norns is determined depending on the value of `norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
@@ -561,6 +630,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 ;; SOURCE FILE MINOR MODE
 
 (defun norns-send ()
+  "Prompt for a command and send it to norns, either to maiden or to the SuperCollider REPL depending on current buffer mode."
   (interactive)
   (cond
    ((string= "lua-mode" major-mode)
@@ -571,6 +641,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
     (user-error "Not a Lua nor SuperCollider source file!"))))
 
 (defun norns-send-selection ()
+  "Send selection to norns, either to maiden or to the SuperCollider REPL depending on current buffer mode."
   (interactive)
   (cond
    ((string= "lua-mode" major-mode)
@@ -590,6 +661,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
             mmap))
 
 (defun norns-mode-hook ()
+  "Helper hook function to auto-bind `norns-mode'."
   (when (norns--current-host-norns-p)
     (norns-mode 1)))
 
@@ -598,6 +670,13 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 ;; SYSTEM HELPER COMMANDS
 
 (defun norns-restart ()
+  "Restart current norns instance services.
+
+Auto re-spawns maiden REPL to catch startup logs.
+
+Current norns is determined with
+`norns--location-from-access-policy', depending on the value of
+`norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (dd default-directory)
@@ -624,6 +703,11 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
           (norns-maiden-send ""))))))
 
 (defun norns-reboot ()
+  "Reboot current norns instance OS.
+
+Current norns is determined with
+`norns--location-from-access-policy', depending on the value of
+`norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
@@ -636,6 +720,7 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
 ;; USER INPUT
 
 (defun norns--osc-send (p &rest args)
+  "Send OSC message to current norns (w/ path P and optional ARGS)."
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host))
          (client (osc-make-client host norns-osc-port)))
@@ -643,16 +728,20 @@ Also ensures the existence of sc output buffer (stored in `norns-sc-buff-alist')
     (delete-process client)))
 
 (defun norns-key (n z)
+  "Change state of key N to value Z (either 0 or 1) on current norns."
   (norns--osc-send "/remote/key" n z))
 
 (defun norns-key-toggle (n)
+  "Simulate a user key press on key N on current norns."
   (norns-key n 1)
   (norns-key n 0))
 
 (defun norns-enc (n delta)
+  "Simulate a rotation of value DELTA on encoder N on current norns."
   (norns--osc-send "/remote/enc" n delta))
 
 
 
 
 (provide 'norns)
+;;; norns.el ends here
