@@ -289,6 +289,10 @@ ENSURE-COMINT-BUFF-EXISTS-FN."
   (concat "/" tramp-default-method ":"
           norns-user "@" norns-host (when norns-mdns-domain (concat "." norns-mdns-domain)) ":"))
 
+(defun norns--make-default-norns-tramp-path ()
+  "Build the tramp path for default norns (`norns-user' @ `norns-host')."
+  (concat (norns--make-default-norns-tramp-prefix) "/home/" norns-user "/dust/"))
+
 (defun norns--location-from-access-policy ()
   "Find a norns file path to move to (by let-binding `default-directory') based on `norns-access-policy'.
 
@@ -304,7 +308,7 @@ and use remote `norns-host'."
   (cond
    ((eq norns-access-policy :current-fallback-default)
     (or (and (norns--current-host-norns-p) default-directory)
-        (norns--make-default-norns-tramp-prefix)))
+        (norns--make-default-norns-tramp-path)))
 
    ((eq norns-access-policy :current)
     (unless (norns--current-host-norns-p)
@@ -312,7 +316,7 @@ and use remote `norns-host'."
     default-directory)
 
    (:default
-    (norns--make-default-norns-tramp-prefix))))
+    (norns--make-default-norns-tramp-path))))
 
 
 
