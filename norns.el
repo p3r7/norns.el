@@ -676,7 +676,8 @@ Current norns is determined depending on the value of `norns-access-policy'."
 (defun norns-restart ()
   "Restart current norns instance services.
 
-Auto re-spawns maiden REPL to catch startup logs.
+Auto re-spawns maiden and SuperCollider REPLs to catch startup
+logs.
 
 Current norns is determined with
 `norns--location-from-access-policy', depending on the value of
@@ -690,20 +691,28 @@ Current norns is determined with
     (shell-command "nohup systemctl restart norns-matron > /dev/null")
     (let* ((frame (selected-frame))
            (win (selected-window))
-           (buff (norns--ensure-host-maiden-buffer-exists host))
-           (visiting-windows (get-buffer-window-list buff)))
-      (when (and norns-repl-switch-on-cmd
-                 (null visiting-windows))
-        (funcall norns-repl-switch-fn buff)
-        (end-of-buffer)
-        (when norns-repl-switch-no-focus
-          (set-frame-selected-window frame win))))
+           (sc-buff (norns--ensure-host-sc-buffer-exists host))
+           (sc-visiting-windows (get-buffer-window-list sc-buff))
+           (maiden-buff (norns--ensure-host-maiden-buffer-exists host))
+           (maiden-visiting-windows (get-buffer-window-list maiden-buff)))
+      (when norns-repl-switch-on-cmd
+        (when (null sc-visiting-windows)
+          (funcall norns-repl-switch-fn sc-buff)
+          (end-of-buffer)
+          (when norns-repl-switch-no-focus
+            (set-frame-selected-window frame win)))
+        (when (null maiden-visiting-windows)
+          (funcall norns-repl-switch-fn maiden-buff)
+          (end-of-buffer)
+          (when norns-repl-switch-no-focus
+            (set-frame-selected-window frame win)))))
 
-    ;; NB: maiden seems to need a "ping" to send its start logs
+    ;; NB: maiden and sc REPLs seem to need a "ping" to send their startup logs
     (run-at-time
      0.1 nil
      `(lambda ()
         (let ((default-directory ,dd))
+          (norns-sc-send "")
           (norns-maiden-send ""))))))
 
 (defun norns-reboot ()
