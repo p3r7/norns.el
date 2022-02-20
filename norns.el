@@ -5,7 +5,7 @@
 ;; Version: 0.0.1
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
-;; Package-Requires: ((emacs "27.2")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(websocket "1.13")(osc "0.4"))
+;; Package-Requires: ((emacs "27.2")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(osc "0.4"))
 ;;
 ;; SPDX-License-Identifier: MIT
 
@@ -404,7 +404,11 @@ Also ensures the existence of maiden output buffer (stored in
   (interactive "s> ")
   (cond
    ((string= ";restart" cmd)
-    (norns-restart))
+    (norns-maiden-restart))
+
+   ;; REVIEW: isn't working, might be a CORS thing
+   ;; ((s-starts-with? ";install " cmd)
+   ;; (norns-maiden-install-script (s-chop-prefix ";install " cmd)))
 
    (:default
     (norns--ws-send (s-replace "\n" "; " cmd)
@@ -536,6 +540,60 @@ Current norns is determined depending on the value of `norns-access-policy'."
          (host (norns--core-curr-host)))
     (switch-to-buffer (norns--ensure-host-maiden-buffer-exists host))))
 
+(defun norns--maiden-repl-after-start (dd)
+  "Force reconnection to maiden REPL upon (re)start."
+  (let* ((default-directory dd)
+         (host (norns--core-curr-host))
+         (frame (selected-frame))
+         (win (selected-window))
+         (maiden-buff (norns--ensure-host-maiden-buffer-exists host))
+         (maiden-visiting-windows (get-buffer-window-list maiden-buff)))
+    (when (and norns-repl-switch-on-cmd
+               (null maiden-visiting-windows))
+      (funcall norns-repl-switch-fn maiden-buff)
+      (end-of-buffer)
+      (when norns-repl-switch-no-focus
+        (set-frame-selected-window frame win))))
+
+  ;; NB: REPLs seem to need a "ping" to send their startup logs
+  (run-at-time
+   0.1 nil
+   `(lambda ()
+      (let ((default-directory ,dd))
+        (norns-maiden-send "")))))
+
+(defun norns-maiden-restart ()
+  "Restart maiden REPL for current norns."
+  (interactive)
+  (let* ((default-directory (norns--location-from-access-policy))
+         (dd default-directory)
+         (host (norns--core-curr-host)))
+    (request
+      (concat "http://" host "." norns-mdns-domain "/api/v1/unit/norns-matron.service")
+      :params '(("do" . "restart"))
+      :parser 'json-read
+      :success (cl-function
+                (lambda (&key data &allow-other-keys)
+                  (norns--maiden-repl-after-start dd)
+                  ;; (message "Got: %S" data)
+                  )))))
+
+(defun norns-maiden-install-script (script-url)
+  "Install norns SCRIPT-URL."
+  (interactive "s> ")
+  (let* ((default-directory (norns--location-from-access-policy))
+         (dd default-directory)
+         (host (norns--core-curr-host)))
+    (request
+      (concat "http://" host "." norns-mdns-domain "/api/v1/project/install")
+      :params `(("url" . ,script-url))
+      :parser 'json-read
+      :success (cl-function
+                (lambda (&key data &allow-other-keys)
+                  ;; "catalog_entry.project_name"
+                  (message "Installed: %S" data)
+                  )))))
+
 
 
 ;; NORNS - SC
@@ -565,11 +623,17 @@ in `norns-sc-buff-alist')."
 (defun norns-sc-send (cmd)
   "Send CMD to norns via SuperCollider and eventually pop a window to the REPL buffer."
   (interactive "s> ")
-  (norns--ws-send (concat cmd "")
-                  'norns-sc-ws-socket-alist
-                  'norns-sc-buff-alist
-                  #'norns--ensure-host-sc-ws-open
-                  #'norns--ensure-host-sc-buffer-exists))
+
+  (cond
+   ((string= ";restart" cmd)
+    (norns-sc-restart))
+
+   (:default
+    (norns--ws-send (concat cmd "")
+                    'norns-sc-ws-socket-alist
+                    'norns-sc-buff-alist
+                    #'norns--ensure-host-sc-ws-open
+                    #'norns--ensure-host-sc-buffer-exists))))
 
 (defun norns-sc-send-selection ()
   "Send selected buffer region to SuperCollider REPL."
@@ -628,6 +692,45 @@ Current norns is determined depending on the value of `norns-access-policy'."
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
     (switch-to-buffer (norns--ensure-host-sc-buffer-exists host))))
+
+(defun norns--sc-repl-after-start (dd)
+  "Force reconnection to SuperCollider REPL upon (re)start."
+  (let* ((default-directory dd)
+         (host (norns--core-curr-host))
+         (frame (selected-frame))
+         (win (selected-window))
+         (sc-buff (norns--ensure-host-sc-buffer-exists host))
+         (sc-visiting-windows (get-buffer-window-list sc-buff)))
+    (when norns-repl-switch-on-cmd
+      (when (null sc-visiting-windows)
+        (funcall norns-repl-switch-fn sc-buff)
+        (end-of-buffer)
+        (when norns-repl-switch-no-focus
+          (set-frame-selected-window frame win)))))
+
+  ;; NB: REPLs seem to need a "ping" to send their startup logs
+  (run-at-time
+   0.1 nil
+   `(lambda ()
+      (let ((default-directory ,dd))
+        (message (concat "Pinging from " default-directory))
+        (norns-sc-send "")))))
+
+(defun norns-sc-restart ()
+  "Restart sc REPL for current norns."
+  (interactive)
+  (let* ((default-directory (norns--location-from-access-policy))
+         (dd default-directory)
+         (host (norns--core-curr-host)))
+    (request
+      (concat "http://" host "." norns-mdns-domain "/api/v1/unit/norns-sclang.service")
+      :params '(("do" . "restart"))
+      :parser 'json-read
+      :success (cl-function
+                (lambda (&key data &allow-other-keys)
+                  (norns--sc-repl-after-start dd)
+                  ;; (message "Got: %S" data)
+                  )))))
 
 
 
@@ -689,31 +792,8 @@ Current norns is determined with
     (shell-command "nohup systemctl restart norns-sclang > /dev/null")
     (shell-command "nohup systemctl restart norns-crone > /dev/null")
     (shell-command "nohup systemctl restart norns-matron > /dev/null")
-    (let* ((frame (selected-frame))
-           (win (selected-window))
-           (sc-buff (norns--ensure-host-sc-buffer-exists host))
-           (sc-visiting-windows (get-buffer-window-list sc-buff))
-           (maiden-buff (norns--ensure-host-maiden-buffer-exists host))
-           (maiden-visiting-windows (get-buffer-window-list maiden-buff)))
-      (when norns-repl-switch-on-cmd
-        (when (null sc-visiting-windows)
-          (funcall norns-repl-switch-fn sc-buff)
-          (end-of-buffer)
-          (when norns-repl-switch-no-focus
-            (set-frame-selected-window frame win)))
-        (when (null maiden-visiting-windows)
-          (funcall norns-repl-switch-fn maiden-buff)
-          (end-of-buffer)
-          (when norns-repl-switch-no-focus
-            (set-frame-selected-window frame win)))))
-
-    ;; NB: maiden and sc REPLs seem to need a "ping" to send their startup logs
-    (run-at-time
-     0.1 nil
-     `(lambda ()
-        (let ((default-directory ,dd))
-          (norns-sc-send "")
-          (norns-maiden-send ""))))))
+    (norns--sc-repl-after-start dd)
+    (norns--maiden-repl-after-start dd)))
 
 (defun norns-reboot ()
   "Reboot current norns instance OS.
