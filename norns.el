@@ -633,7 +633,12 @@ in `norns-sc-buff-alist')."
                     'norns-sc-ws-socket-alist
                     'norns-sc-buff-alist
                     #'norns--ensure-host-sc-ws-open
-                    #'norns--ensure-host-sc-buffer-exists))))
+                    #'norns--ensure-host-sc-buffer-exists)
+    ;; NB: sc doesn't usually answer when request is empty, so we simulate it
+    (when (string= (s-trim cmd) "")
+      (let* ((default-directory (norns--location-from-access-policy))
+             (host (norns--core-curr-host)))
+        (norns--sc-output host "\n"))))))
 
 (defun norns-sc-send-selection ()
   "Send selected buffer region to SuperCollider REPL."
