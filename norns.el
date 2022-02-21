@@ -590,8 +590,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
       :success (cl-function
                 (lambda (&key data &allow-other-keys)
                   ;; "catalog_entry.project_name"
-                  (message "Installed: %S" data)
-                  )))))
+                  (message "Installed: %S" data))))))
 
 
 
