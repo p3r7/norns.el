@@ -1,4 +1,4 @@
-;;; norns.el --- Control your norns from whithin Emacs -*- lexical-binding: t; -*-
+;;; norns.el --- Control your norns from within Emacs -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022 Jordan Besly
 ;;
