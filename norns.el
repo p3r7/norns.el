@@ -18,7 +18,7 @@
 ;;
 ;; All commands (unless specified otherwise) will analyze if currently
 ;; visited file is on a norns.  If it's the case, this particular norns is
-;; targeted by the command execution. Otherwise the default norns instance
+;; targeted by the command execution.  Otherwise the default norns instance
 ;; (configurable w/ `norns-host' / `norns-mdns-domain' is targeted
 ;; instead).  This behaviors can be changed by setting value of
 ;; `norns-access-policy' to ":current" or ":default".
@@ -36,7 +36,7 @@
 ;; `norns-maiden-send-selection'.
 ;;
 ;; The currently visited script can be loaded with
-;; `norns-load-current-script'. If current script has several
+;; `norns-load-current-script'.  If current script has several
 ;; "sub-scripts", you'll get prompted to select one.
 ;;
 ;; `norns-load-script' will list all the scripts on current norns instance
@@ -191,8 +191,9 @@ it ignore the prompt."
   (process-mark (get-buffer-process (current-buffer))))
 
 (defun norns--comint-async-output-for-host (host-buff-alist host prompt txt)
-  "Write TXT to comint buffer for HOST (stored in value of symbol
-HOST-BUFF-ALIST).
+  "Write TXT to comint buffer for HOST.
+
+The comint buffer for HOST is stored in value of symbol HOST-BUFF-ALIST.
 
 Ends output with a PROMPT to make comint believe it was a
 standard command execution."
@@ -251,7 +252,9 @@ BUFF-REGISTER-FN."
 (defun norns--comint-ensure-host-ws-open (host-ws-alist
                                           host ws-port
                                           ensure-host-buffer-exists-fn comint-output-fn)
-  "Ensure websocket for norns HOST (stored in value of symbol HOST-WS-ALIST) is open.
+  "Ensure websocket for norns HOST is open.
+
+The websocket for HOST is stored in value of symbol HOST-WS-ALIST.
 
 Also ensures the existence of associated comint output buffer by
 calling ENSURE-HOST-BUFFER-EXISTS-FN.  WS-PORT is the remote
@@ -279,7 +282,10 @@ buffer."
 (defun norns--ws-send (cmd
                        host-ws-alist host-comint-buff-alist
                        ensure-ws-open-fn ensure-comint-buff-exists-fn)
-  "Send CMD to current norns via websocket and eventually pop a window to its associated comint buffer.
+  "Send CMD to current norns via websocket.
+
+Depending on value of `norns-repl-switch-on-cmd', eventually pop
+a window to its associated REPL (comint buffer).
 
 Current norns is determined with
 `norns--location-from-access-policy', depending on the value of
@@ -324,7 +330,7 @@ ENSURE-COMINT-BUFF-EXISTS-FN."
   (concat (norns--make-default-norns-tramp-prefix) "/home/" norns-user "/dust/"))
 
 (defun norns--location-from-access-policy ()
-  "Find a norns file path to move to (by let-binding `default-directory') based on `norns-access-policy'.
+  "Find current norns file path to work on based on `norns-access-policy'.
 
 With default value \":current-fallback-default\", tries first on
 `default-directory' (assuming we're visiting a norns), then
@@ -420,7 +426,9 @@ Current norns is determined with
   (norns--comint-ensure-buffer-for-host-exists 'norns-maiden-buff-alist host #'norns--register-maiden-buffer))
 
 (defun norns--ensure-host-maiden-ws-open (host)
-  "Ensure socket for norns HOST (stored in `norns-maiden-ws-socket-alist') is open.
+  "Ensure socket for norns HOST is open.
+
+The REPL (comint buffer) for HOST is stored in `norns-maiden-ws-socket-alist'.
 
 Also ensures the existence of maiden output buffer (stored in
 `norns-maiden-buff-alist')."
@@ -507,7 +515,10 @@ Please note that it will only work properly for non-local lua vars."
       (message "canceled"))))
 
 (defun norns-load-script ()
-  "Prompt user to select any of the existing scripts and then ask for current norns to launch it.
+  "Load script from list.
+
+Prompt user to select any of the existing scripts and then ask
+for current norns to launch it.
 
 Current norns is determined with
 `norns--location-from-access-policy', depending on the value of
@@ -641,7 +652,9 @@ Host is identified by it's path DD."
   (norns--comint-ensure-buffer-for-host-exists 'norns-sc-buff-alist host #'norns--register-sc-buffer))
 
 (defun norns--ensure-host-sc-ws-open (host)
-  "Ensure socket for norns HOST (stored in `norns-sc-ws-socket-alist') is open.
+  "Ensure socket for norns HOST is open.
+
+The REPL (comint buffer) for HOST is stored in `norns-sc-ws-socket-alist'.
 
 Also ensures the existence of SuperCollider output buffer (stored
 in `norns-sc-buff-alist')."
