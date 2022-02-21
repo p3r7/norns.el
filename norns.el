@@ -766,9 +766,9 @@ Current norns is determined depending on the value of `norns-access-policy'."
   "Additional shortcuts for norns lua & sc sources."
   :lighter norns-mode-lighter
   :keymap (let ((mmap (make-sparse-keymap)))
-            (define-key mmap (kbd "C-c e r") #'norns-send-selection)
-            (define-key mmap (kbd "C-c e c") #'norns-send)
-            (define-key mmap (kbd "C-c e R") #'norns-load-current-script)
+            (define-key mmap (kbd "C-c ! r") #'norns-send-selection)
+            (define-key mmap (kbd "C-c ! c") #'norns-send)
+            (define-key mmap (kbd "C-c ! R") #'norns-load-current-script)
             mmap))
 
 (defun norns-mode-hook ()
