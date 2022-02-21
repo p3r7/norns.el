@@ -70,7 +70,7 @@
 
 ;; CONST
 
-(defconst norns-script-path-prefix "/home/we/dust/code/")
+(defconst norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
 
 (defconst norns-script-rx
   (rx bol
@@ -99,7 +99,7 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
 
 (defun norns--core-tramp-extract-path (tramp-path)
   "Remove tramp prefix out of TRAMP-PATH, keeping only the filesystem path."
-  (let (vec localname)
+  (let (vec _localname)
     (setq vec (ignore-errors (tramp-dissect-file-name tramp-path)))
     (if vec
         (tramp-file-name-localname vec)
@@ -176,7 +176,7 @@ standard command execution."
 
     (with-current-buffer buff
       (save-excursion
-        (end-of-buffer)
+        (goto-char (point-max))
 
         ;; remove active prompt
         (unless (eq (norns--comint-true-line-beginning-position) (line-end-position))
@@ -188,7 +188,7 @@ standard command execution."
         (comint-output-filter (norns--comint-process) output)
 
         (when prompt-entry
-          (end-of-buffer)
+          (goto-char (point-max))
           (insert prompt-entry)))
 
       ;; make visiting windows "follow" (akin to `eshell-scroll-to-bottom-on-output')
@@ -272,7 +272,7 @@ ENSURE-COMINT-BUFF-EXISTS-FN."
       (when (and norns-repl-switch-on-cmd
                  (null visiting-windows))
         (apply norns-repl-switch-fn (list comint-buff))
-        (end-of-buffer)
+        (goto-char (point-max))
         (when norns-repl-switch-no-focus
           (set-frame-selected-window frame win))))))
 
@@ -551,7 +551,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
     (when (and norns-repl-switch-on-cmd
                (null maiden-visiting-windows))
       (funcall norns-repl-switch-fn maiden-buff)
-      (end-of-buffer)
+      (goto-char (point-max))
       (when norns-repl-switch-no-focus
         (set-frame-selected-window frame win))))
 
@@ -573,7 +573,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
       :params '(("do" . "restart"))
       :parser 'json-read
       :success (cl-function
-                (lambda (&key data &allow-other-keys)
+                (lambda (&key _data &allow-other-keys)
                   (norns--maiden-repl-after-start dd)
                   ;; (message "Got: %S" data)
                   )))))
@@ -582,7 +582,6 @@ Current norns is determined depending on the value of `norns-access-policy'."
   "Install norns SCRIPT-URL."
   (interactive "s> ")
   (let* ((default-directory (norns--location-from-access-policy))
-         (dd default-directory)
          (host (norns--core-curr-host)))
     (request
       (concat "http://" host "." norns-mdns-domain "/api/v1/project/install")
@@ -709,7 +708,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
     (when norns-repl-switch-on-cmd
       (when (null sc-visiting-windows)
         (funcall norns-repl-switch-fn sc-buff)
-        (end-of-buffer)
+        (goto-char (point-max))
         (when norns-repl-switch-no-focus
           (set-frame-selected-window frame win)))))
 
@@ -732,7 +731,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
       :params '(("do" . "restart"))
       :parser 'json-read
       :success (cl-function
-                (lambda (&key data &allow-other-keys)
+                (lambda (&key _data &allow-other-keys)
                   (norns--sc-repl-after-start dd)
                   ;; (message "Got: %S" data)
                   )))))
@@ -792,8 +791,7 @@ Current norns is determined with
 `norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
-         (dd default-directory)
-         (host (norns--core-curr-host)))
+         (dd default-directory))
     (shell-command "nohup systemctl restart norns-sclang > /dev/null")
     (shell-command "nohup systemctl restart norns-crone > /dev/null")
     (shell-command "nohup systemctl restart norns-matron > /dev/null")
