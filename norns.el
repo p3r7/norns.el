@@ -169,7 +169,7 @@ standard command execution."
   (let* ((buff (cdr (assoc host (symbol-value host-buff-alist))))
          (visiting-windows (get-buffer-window-list buff 't))
          (eof-visiting-windows (--filter (with-selected-window it
-                                           (eq (point) (point-max)))
+                                           (eobp))
                                          visiting-windows))
          (output (concat txt prompt))
          prompt-entry)
