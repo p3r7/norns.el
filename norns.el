@@ -60,8 +60,8 @@
 (defvar norns-repl-switch-fn #'switch-to-buffer-other-window "Function to use when `norns-repl-switch-on-cmd' is non-nil.")
 (defvar norns-repl-switch-no-focus t "If non-nil, don't have popping REPL window steal focus after calling `norns-repl-switch-fn'.")
 
-(defvar norns-maiden-mode-lighter "maiden-repl" "maiden REPL major mode lighter.")
-(defvar norns-sc-mode-lighter "norns-sc-repl" "SuperCollider REPL major mode lighter.")
+(defvar norns-maiden-mode-lighter " maiden-repl" "maiden REPL major mode lighter.")
+(defvar norns-sc-mode-lighter " norns-sc-repl" "SuperCollider REPL major mode lighter.")
 
 (defvar norns-mode-lighter " norns" "norns minor mode lighter.")
 
