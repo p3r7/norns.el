@@ -34,26 +34,26 @@
 
 (defvar norns-access-policy :current-fallback-default)
 
-(defvar norns-user "we" "norns user.")
+(defvar norns-user "we" "Default norns user.")
 (defvar norns-host "norns" "Default norns hostname.")
 (defvar norns-mdns-domain "local" "Default norns mDNS (aka zeroconf).")
 
-(defvar norns-osc-port 10111 "norns OSC protocol port.")
+(defvar norns-osc-port 10111 "Default norns OSC protocol port.")
 
-(defvar norns-maiden-ws-port 5555 "norns maiden REPL websocket port.")
+(defvar norns-maiden-ws-port 5555 "Default norns maiden REPL websocket port.")
 (defvar norns-maiden-ws-socket-alist nil "Alist containing HOST / MAIDEN-WS-SOCKET associations.")
 (defvar norns-maiden-buffer-prefix "maiden" "Prefix for name of maiden REPL buffers.")
 (defvar norns-maiden-buff-alist nil "Alist containing HOST / MAIDEN-COMINT-BUFFER associations.")
-(defvar norns-maiden-repl-prompt "maiden>> " "maiden REPL buffer prompt.")
+(defvar norns-maiden-repl-prompt "maiden>> " "Customizable maiden REPL buffer prompt.")
 (defconst norns-maiden-repl-prompt-internal "maiden>> " "Version of `norns-maiden-repl-prompt' for handling when it gets redefined at runtime.")
 (defvar norns-lua-lib-inject-dir "/tmp/")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 
-(defvar norns-sc-ws-port 5556 "norns SuperCollider REPL websocket port.")
+(defvar norns-sc-ws-port 5556 "Default norns SuperCollider REPL websocket port.")
 (defvar norns-sc-ws-socket-alist nil "Alist containing HOST / SC-WS-SOCKET associations.")
 (defvar norns-sc-buffer-prefix "norns-sc" "Prefix for name of SuperCollider REPL buffers.")
 (defvar norns-sc-buff-alist nil "Alist containing HOST / SC-COMINT-BUFFER associations.")
-(defvar norns-sc-repl-prompt "sc>> " "SuperCollider REPL buffer prompt.")
+(defvar norns-sc-repl-prompt "sc>> " "Customizable SuperCollider REPL buffer prompt.")
 (defconst norns-sc-repl-prompt-internal "sc>> " "Version of `norns-sc-repl-prompt' for handling when it gets redefined at runtime.")
 
 (defvar norns-repl-switch-on-cmd t "If non-nil, switch to maiden/SuperCollider REPL buffer after sending it a command.")
@@ -157,7 +157,7 @@ it ignore the prompt."
   (set-marker (process-mark (get-buffer-process (current-buffer))) pos))
 
 (defun norns--comint-pm nil
-  "Get marker for last output of (dummy) process "
+  "Get marker for last output of (dummy) process."
   (process-mark (get-buffer-process (current-buffer))))
 
 (defun norns--comint-async-output-for-host (host-buff-alist host prompt txt)
@@ -541,7 +541,9 @@ Current norns is determined depending on the value of `norns-access-policy'."
     (switch-to-buffer (norns--ensure-host-maiden-buffer-exists host))))
 
 (defun norns--maiden-repl-after-start (dd)
-  "Force reconnection to maiden REPL upon (re)start."
+  "Force reconnection to maiden REPL upon (re)start.
+
+Host is identified by it's path DD."
   (let* ((default-directory dd)
          (host (norns--core-curr-host))
          (frame (selected-frame))
@@ -697,7 +699,9 @@ Current norns is determined depending on the value of `norns-access-policy'."
     (switch-to-buffer (norns--ensure-host-sc-buffer-exists host))))
 
 (defun norns--sc-repl-after-start (dd)
-  "Force reconnection to SuperCollider REPL upon (re)start."
+  "Force reconnection to SuperCollider REPL upon (re)start.
+
+Host is identified by it's path DD."
   (let* ((default-directory dd)
          (host (norns--core-curr-host))
          (frame (selected-frame))
