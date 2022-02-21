@@ -5,7 +5,7 @@
 ;; Version: 0.0.1
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
-;; Package-Requires: ((emacs "27.2")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(osc "0.4"))
+;; Package-Requires: ((dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(osc "0.4"))
 ;;
 ;; SPDX-License-Identifier: MIT
 
