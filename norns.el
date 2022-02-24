@@ -70,6 +70,8 @@
 
 (defvar norns-osc-port 10111 "Default norns OSC protocol port.")
 
+(defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
+
 (defvar norns-maiden-ws-port 5555 "Default norns maiden REPL websocket port.")
 (defvar norns-maiden-ws-socket-alist nil "Alist containing HOST / MAIDEN-WS-SOCKET associations.")
 (defvar norns-maiden-buffer-prefix "maiden" "Prefix for name of maiden REPL buffers.")
@@ -94,7 +96,6 @@
 (defvar norns-sc-mode-lighter " norns-sc-repl" "SuperCollider REPL major mode lighter.")
 
 (defvar norns-mode-lighter " norns" "norns minor mode lighter.")
-
 
 
 
@@ -859,7 +860,7 @@ Current norns is determined with
 
 
 
-;; USER INPUT
+;; IO - OSC
 
 (defun norns--osc-send (p &rest args)
   "Send OSC message to current norns (w/ path P and optional ARGS)."
@@ -881,6 +882,27 @@ Current norns is determined with
 (defun norns-enc (n delta)
   "Simulate a rotation of value DELTA on encoder N on current norns."
   (norns--osc-send "/remote/enc" n delta))
+
+
+
+;; IO - SCREEN
+
+(defun norns-screen-dump (filename)
+  "Dump norns screen into FILENAME."
+  (interactive "sFileame: ")
+  (let ((norns-repl-switch-on-cmd nil))
+    (norns-maiden-send (concat "_norns.screen_export_png(\"" norns-screenshot-folder filename ".png\")"))))
+
+(defun norns-screenshot (filename)
+  "Take a screenshot of norns screen."
+  (interactive "sFileame: ")
+  (norns-screen-dump filename)
+  (run-at-time
+   0.1 nil
+   `(lambda ()
+      (let ((default-directory (norns--location-from-access-policy))
+            (screenshot-file (concat norns-screenshot-folder ,filename ".png")))
+        (shell-command (concat "convert " screenshot-file " -gamma 1.25 -filter point -resize 400% -gravity center -background black -extent 120% " screenshot-file))))))
 
 
 
