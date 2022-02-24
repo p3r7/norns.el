@@ -888,13 +888,17 @@ Current norns is determined with
 ;; IO - SCREEN
 
 (defun norns-screen-dump (filename)
-  "Dump norns screen into FILENAME."
+  "Make a raw dump of norns screen into a file.
+
+Save it as FILENAME.png inside `norns-screenshot-folder'."
   (interactive "sFileame: ")
   (let ((norns-repl-switch-on-cmd nil))
     (norns-maiden-send (concat "_norns.screen_export_png(\"" norns-screenshot-folder filename ".png\")"))))
 
 (defun norns-screenshot (filename)
-  "Take a screenshot of norns screen."
+  "Take a screenshot of norns screen.
+
+Save it as FILENAME.png inside `norns-screenshot-folder'."
   (interactive "sFileame: ")
   (norns-screen-dump filename)
   (run-at-time
