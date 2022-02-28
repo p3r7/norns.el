@@ -78,7 +78,6 @@
 (defvar norns-maiden-buff-alist nil "Alist containing HOST / MAIDEN-COMINT-BUFFER associations.")
 (defvar norns-maiden-repl-prompt "maiden>> " "Customizable maiden REPL buffer prompt.")
 (defconst norns-maiden-repl-prompt-internal "maiden>> " "Version of `norns-maiden-repl-prompt' for handling when it gets redefined at runtime.")
-(defvar norns-lua-lib-inject-dir "/tmp/")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 
 (defvar norns-sc-ws-port 5556 "Default norns SuperCollider REPL websocket port.")
@@ -469,7 +468,7 @@ Also ensures the existence of maiden output buffer (stored in
 (defun norns--inject-inspect-lib ()
   "Inject inspect.lua library onto norns."
   (let* ((default-directory (norns--location-from-access-policy))
-         (dest-file (norns--core-trampify-path-maybe (concat norns-lua-lib-inject-dir "inspect.lua"))))
+         (dest-file (concat (temporary-file-directory) "inspect.lua")))
     (unless (file-exists-p dest-file)
       (url-copy-file norns-lua-lib-inspect-url dest-file))))
 
