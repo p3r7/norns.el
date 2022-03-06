@@ -57,6 +57,7 @@
 (require 'f)
 (require 'tramp)
 
+(require 'request)
 (require 'websocket)
 (require 'osc)
 
