@@ -53,7 +53,9 @@
 (require 'dash)
 (require 's)
 (require 'rx)
+
 (require 'f)
+(require 'tramp)
 
 (require 'websocket)
 (require 'osc)
