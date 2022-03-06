@@ -94,9 +94,6 @@
 (defvar norns-repl-switch-fn #'switch-to-buffer-other-window "Function to use when `norns-repl-switch-on-cmd' is non-nil.")
 (defvar norns-repl-switch-no-focus t "If non-nil, don't have popping REPL window steal focus after calling `norns-repl-switch-fn'.")
 
-(defvar norns-maiden-mode-lighter " maiden-repl" "Lighter for maiden REPL major mode.")
-(defvar norns-sc-mode-lighter " norns-sc-repl" "Lighter SuperCollider REPL major mode.")
-
 (defvar norns-mode-lighter " norns" "Lighter for norns minor mode.")
 
 
@@ -545,7 +542,7 @@ If visiting a script folder, and more than 1 script is found in it, prompt user 
 Output is processed asyncronously by `norns--maiden-output'."
   (norns-maiden-send input))
 
-(define-derived-mode norns-maiden-repl-mode comint-mode norns-maiden-mode-lighter
+(define-derived-mode norns-maiden-repl-mode comint-mode "maiden-repl"
   "Major mode for interracting w/ a monome norns' maiden REPL."
   :keymap (let ((mmap (make-sparse-keymap)))
             mmap)
@@ -705,7 +702,7 @@ in `norns-sc-buff-alist')."
 Output is processed asyncronously by `norns--sc-output'."
   (norns-sc-send input))
 
-(define-derived-mode norns-sc-repl-mode comint-mode norns-sc-mode-lighter
+(define-derived-mode norns-sc-repl-mode comint-mode "norns-sc-repl"
   "Major mode for interracting w/ a monome norns' SuperCollider REPL."
   :keymap (let ((mmap (make-sparse-keymap)))
             mmap)
