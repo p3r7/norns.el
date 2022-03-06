@@ -100,11 +100,11 @@
 
 ;; CONST
 
-(defvar norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
+(defconst norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
 
 (defconst norns-script-rx
   (rx bol
-      (eval norns-script-path-prefix)
+      (literal norns-script-path-prefix)
       (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_")))
       "/"
       (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_"))) ".lua"
@@ -112,7 +112,7 @@
 
 (defconst norns-in-script-dir-rx
   (rx bol
-      (eval norns-script-path-prefix)
+      (literal norns-script-path-prefix)
       (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_")))
       "/"))
 
