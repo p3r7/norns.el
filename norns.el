@@ -100,7 +100,7 @@
 
 ;; CONST
 
-(defconst norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
+(defvar norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
 
 (defconst norns-script-rx
   (rx bol
