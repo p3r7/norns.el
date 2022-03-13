@@ -6,6 +6,7 @@ Control one (or several) monome norns from within Emacs.
 
 Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself (untested).
 
+[![MELPA](https://melpa.org/packages/norns-badge.svg)](https://melpa.org/#/norns)
 
 ## Commands
 
@@ -49,15 +50,8 @@ Prompt user for list of available norns scripts and launch the one selected.
 
 ## Installation
 
-The package is not yet available on [MELPA](https://melpa.org/).
-
-For now, the recommended way to install is with [use-package](https://github.com/jwiegley/use-package), [quelpa](https://github.com/quelpa/quelpa) and [quelpa-use-package](https://github.com/quelpa/quelpa-use-package).
-
-To get only the web browsing mode:
-
 ```el
 (use-package norns
-  :quelpa (norns :fetcher github :repo "p3r7/norns.el")
   :config
   (add-hook 'lua-mode-hook #'norns-mode-hook)
   (add-hook 'sclang-mode-mode-hook #'norns-mode-hook))
