@@ -53,8 +53,8 @@ Prompt user for list of available norns scripts and launch the one selected.
 ```el
 (use-package norns
   :config
-  (add-hook 'lua-mode-hook #'norns-mode-hook)
-  (add-hook 'sclang-mode-mode-hook #'norns-mode-hook))
+  (add-hook 'lua-mode-hook #'norns-mode-maybe-activate)
+  (add-hook 'sclang-mode-mode-hook #'norns-mode-maybe-activate))
 ```
 
 

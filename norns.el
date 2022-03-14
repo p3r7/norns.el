@@ -817,8 +817,8 @@ Host is identified by it's path DD."
             (define-key mmap (kbd "C-c ! R") #'norns-load-current-script)
             mmap))
 
-(defun norns-mode-hook ()
-  "Helper hook function to auto-bind `norns-mode'."
+(defun norns-mode-maybe-activate ()
+  "Helper function to bind to `lua-mode-hook' and `sclang-mode-hook', to activate `norns-mode' if applicable."
   (when (norns--current-host-norns-p)
     (norns-mode 1)))
 
