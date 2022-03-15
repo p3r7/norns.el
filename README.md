@@ -28,7 +28,7 @@ Those behaviors can be customized by tweaking the values of `norns-access-policy
 Spawn and switch to maiden REPL / SuperCollider REPL for norns instance.
 
 
-#### `(norns-send TXT)` / `(norns-maiden-send TXT)` / `(norns-sc-send TXT)`
+#### `(norns-maiden-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
 
 Prompt user to enter raw text `TXT` command and sends it to maiden / SuperCollider.
 
