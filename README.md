@@ -109,9 +109,9 @@ If you want commands to interact w/ a specific norns instance independently of y
 
 ## Implementation details
 
-Major mode for maiden REPL (`norns-maiden-repl-mode`) is based on `comint-mode`.
+Major modes for REPLs (`norns-maiden-repl-mode` / `norns-sc-repl-mode`) are based on `comint-mode`.
 
-As maiden communication doesn't rely on a process (but websocket communication instead), we bind a "fake" process and handle output manually by calling `comint-output-filter` (inside of `norns--maiden-output`).
+As those communications doesn't rely on a process (but websocket communication instead), we bind a "fake" process and handle output manually by calling `comint-output-filter` (inside of `norns--maiden-output` / `norns--sc-output`).
 
 This trick comes from `ielm`.
 
