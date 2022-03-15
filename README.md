@@ -6,7 +6,9 @@ Control one (or several) monome norns from within Emacs.
 
 Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself (untested).
 
+[![GNU Emacs](https://github.com/minad/corfu/blob/screenshots/emacs.svg?raw=true)](https://www.gnu.org/software/emacs/)
 [![MELPA](https://melpa.org/packages/norns-badge.svg)](https://melpa.org/#/norns)
+
 
 ## Commands
 
