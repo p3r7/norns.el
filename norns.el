@@ -788,14 +788,14 @@ Host is identified by it's path DD."
 
 ;; SOURCE FILE MINOR MODE
 
-(defun norns-send ()
+(defun norns-send (cmd)
   "Prompt for a command and send it to norns, either to maiden or to the SuperCollider REPL depending on current buffer mode."
-  (interactive)
+  (interactive "s> ")
   (cond
    ((string= "lua-mode" major-mode)
-    (call-interactively #'norns-maiden-send))
+    (norns-maiden-send cmd))
    ((string= "sclang-mode" major-mode)
-    (call-interactively #'norns-sc-send))
+    (norns-sc-send cmd))
    (:default
     (user-error "Not a Lua nor SuperCollider source file!"))))
 

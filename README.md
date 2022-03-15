@@ -100,10 +100,11 @@ If you want commands to interact w/ a specific norns instance independently of y
   ;;  [...]
 
   :config
-  (defun norns2-send-command (cmd)
+  (defun norns2-send (cmd)
+    (interactive "s> ")
     (let ((norns-access-policy :default)
           (norns-host "norns2"))
-      (norns-send-command cmd))))
+      (norns-send cmd))))
 ```
 
 ## Implementation details
