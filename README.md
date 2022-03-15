@@ -2,9 +2,11 @@
 
 <div align=center><img alt="logo" width="572" height="222" src="icon.png"></div>
 
-Control one (or several) monome norns from within Emacs.
+Interactive development environment for monome norns from Emacs.
 
 Support for targeting remote norns instances (via TRAMP) or even Emacs running on norns itself (untested).
+
+Several norns instances can be interacted with concurently (all buffers are namespaced by norns' hostname).
 
 [![GNU Emacs](https://github.com/minad/corfu/blob/screenshots/emacs.svg?raw=true)](https://www.gnu.org/software/emacs/)
 [![MELPA](https://melpa.org/packages/norns-badge.svg)](https://melpa.org/#/norns)

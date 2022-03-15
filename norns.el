@@ -1,4 +1,4 @@
-;;; norns.el --- Control your monome norns -*- lexical-binding: t; -*-
+;;; norns.el --- Interactive development environment for monome norns -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022 Jordan Besly
 ;;
@@ -11,10 +11,12 @@
 
 ;;; Commentary:
 ;;
-;; This package provides major modes that bind to remote maiden and
-;; SuperCollider REPLs (`norns-maiden-repl-mode', `norns-sc-repl-mode') and
-;; associated commands to connect to those and interact with them from Lua
-;; and SuperCollider source files.
+;; This package provides an interactive development for monome norns.
+;;
+;; This package allows to spawn REPLs that bind to remote maiden and
+;; SuperCollider REPLs (via commands `norns-maiden-repl', `norns-sc-repl')
+;; and associated commands to interact with them from Lua and SuperCollider
+;; source files.
 ;;
 ;; All commands (unless specified otherwise) will analyze if currently
 ;; visited file is on a norns.  If it's the case, this particular norns is
