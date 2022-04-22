@@ -54,7 +54,7 @@ Prompt user for list of available norns scripts and launch the one selected.
 
 #### `(norns-restart)` / `(norns-reboot)`
 
-`norns-restart` restarts all norns services. Respwns the maiden and SuperCollider REPLs.
+`norns-restart` restarts all norns services. Respawns the maiden and SuperCollider REPLs.
 
 `norns-reboot` performs a full OS reboot (for when things get stuck bad).
 
@@ -63,7 +63,7 @@ Prompt user for list of available norns scripts and launch the one selected.
 
 Take a screenshot of norns screen. Save it on norns itself under `norns-screenshot-folder`.
 
-`norns-screen-dump` does the same but is lower level. It directly dumps what is in the screen memory buffer and doesn't perform scaling / quantized greyscale convertion to match how it appears IRL.
+`norns-screen-dump` does the same but is lower level. It directly dumps what is in the screen memory buffer and doesn't perform scaling / quantized greyscale conversion to match how it appears IRL.
 
 
 ## Installation
