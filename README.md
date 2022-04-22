@@ -117,7 +117,7 @@ As a result I decided to remove this dependency.
 
 I may reintroduce it once it gets fixed.
 
-In the meantime, you could had back the OSC-based feature by dropping that in your `init.el`:
+In the meantime, you could add back the OSC-based feature by dropping that in your `init.el`:
 
 ```el
 (require 'osc)
