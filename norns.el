@@ -5,7 +5,7 @@
 ;; Version: 0.0.1
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
-;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(osc "0.4"))
+;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13"))
 ;;
 ;; SPDX-License-Identifier: MIT
 
@@ -61,7 +61,6 @@
 
 (require 'request)
 (require 'websocket)
-(require 'osc)
 
 
 
@@ -72,8 +71,6 @@
 (defvar norns-user "we" "Default norns user.")
 (defvar norns-host "norns" "Default norns hostname.")
 (defvar norns-mdns-domain "local" "Default norns mDNS (aka zeroconf).")
-
-(defvar norns-osc-port 10111 "Default norns OSC protocol port.")
 
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
 
@@ -858,31 +855,6 @@ Current norns is determined with
     (when (string= host "localhost")
       (user-error "You can't restart norns from within Emacs when it is running from norns!"))
     (shell-command "sudo reboot now")))
-
-
-
-;; IO - OSC
-
-(defun norns--osc-send (p &rest args)
-  "Send OSC message to current norns (w/ path P and optional ARGS)."
-  (let* ((default-directory (norns--location-from-access-policy))
-         (host (norns--core-curr-host))
-         (client (osc-make-client host norns-osc-port)))
-    (apply #'osc-send-message client p args)
-    (delete-process client)))
-
-(defun norns-key (n z)
-  "Change state of key N to value Z (either 0 or 1) on current norns."
-  (norns--osc-send "/remote/key" n z))
-
-(defun norns-key-toggle (n)
-  "Simulate a user key press on key N on current norns."
-  (norns-key n 1)
-  (norns-key n 0))
-
-(defun norns-enc (n delta)
-  "Simulate a rotation of value DELTA on encoder N on current norns."
-  (norns--osc-send "/remote/enc" n delta))
 
 
 

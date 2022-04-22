@@ -107,6 +107,52 @@ If you want commands to interact w/ a specific norns instance independently of y
       (norns-send cmd))))
 ```
 
+## OSC commands
+
+The package used to embed OSC-based commands to simulate button & encoder presses.
+
+The `osc.el` package appears to be doing some unholy stuff (negative Unix timestamps) which somehow works on Linux x82_64 builds but does not on ARM nor WinNT. Furthermore, as it's in a `defconst` it cannot be monkeypatched.
+
+As a result I decided to remove this dependency.
+
+I may reintroduce it once it gets fixed.
+
+In the meantime, you could had back the OSC-based feature by dropping that in your `init.el`:
+
+```el
+(require 'osc)
+
+
+;; VARS
+
+(defvar norns-osc-port 10111 "Default norns OSC protocol port.")
+
+
+;; IO - OSC
+
+(defun norns--osc-send (p &rest args)
+  "Send OSC message to current norns (w/ path P and optional ARGS)."
+  (let* ((default-directory (norns--location-from-access-policy))
+         (host (norns--core-curr-host))
+         (client (osc-make-client host norns-osc-port)))
+    (apply #'osc-send-message client p args)
+    (delete-process client)))
+
+(defun norns-key (n z)
+  "Change state of key N to value Z (either 0 or 1) on current norns."
+  (norns--osc-send "/remote/key" n z))
+
+(defun norns-key-toggle (n)
+  "Simulate a user key press on key N on current norns."
+  (norns-key n 1)
+  (norns-key n 0))
+
+(defun norns-enc (n delta)
+  "Simulate a rotation of value DELTA on encoder N on current norns."
+  (norns--osc-send "/remote/enc" n delta))
+```
+
+
 ## Implementation details
 
 Major modes for REPLs (`norns-maiden-repl-mode` / `norns-sc-repl-mode`) are based on `comint-mode`.
