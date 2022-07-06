@@ -335,13 +335,10 @@ If `tramp-default-method' is \"docker\" we assume a local docker instance.
 In that case `norns-user' @ `norns-docker-container' gets used."
   (let* ((hostname (cond
                     ((string= tramp-default-method "docker") norns-docker-container)
-                    (t norns-host)))
-         (mdns-domain (cond
-                       ((string= tramp-default-method "docker") norns-local-mdns-domain)
-                       (t norns-mdns-domain)))
-         (fqdn (concat hostname "." mdns-domain)))
+                    (t (concat norns-host (when norns-local-mdns-domain
+                                            (concat "." norns-local-mdns-domain)))))))
     (concat "/" tramp-default-method ":"
-            norns-user "@" fqdn ":")))
+            norns-user "@" hostname ":")))
 
 (defun norns--make-default-norns-tramp-path ()
   "Build the tramp path for default norns (`norns-user' @ `norns-host')."
