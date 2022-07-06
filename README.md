@@ -28,6 +28,15 @@ Those behaviors can be customized by tweaking the values of `norns-access-policy
 Spawn and switch to maiden REPL / SuperCollider REPL for norns instance.
 
 
+#### `(norns-docker-maiden-repl)` / `(norns-docker-sc-repl)`
+
+Same as above but connects to a localy-running dockerized norns instance (see [winder/norns-dev](https://github.com/winder/norns-dev/)).
+
+Requires package [docker-tramp](https://github.com/emacs-pe/docker-tramp.el) to access the container's filesystem.
+
+If using a custom container name, tweak value of `norns-docker-container`. Likewise, you may need to adjust the value of `norns-local-mdns-domain` if your LAN domain name is other than `"lan"`.
+
+
 #### `(norns-maiden-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
 
 Prompt user to enter raw text `TXT` command and sends it to maiden / SuperCollider.
