@@ -34,7 +34,7 @@ Same as above but connects to a localy-running dockerized norns instance (see [w
 
 Requires package [docker-tramp](https://github.com/emacs-pe/docker-tramp.el) to access the container's filesystem.
 
-If using a custom container name, tweak value of `norns-docker-container`. Likewise, you may need to adjust the value of `norns-local-mdns-domain` if your LAN domain name is other than `"lan"`.
+If using a custom container name, tweak value of `norns-docker-container`. Likewise, you may need to adjust the value of `norns-local-mdns-domain` if your LAN domain is other than `lan`.
 
 
 #### `(norns-maiden-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
