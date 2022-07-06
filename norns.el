@@ -529,7 +529,7 @@ Current norns is determined with
   "Load currently visited script.
 If visiting a script folder, and more than 1 script is found in it, prompt user to select one."
   (interactive)
-  (let ((norns-access-policy :default))
+  (let ((norns-access-policy :current))
     (norns--load-script-helper (norns-current-scripts))))
 
 
