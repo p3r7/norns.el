@@ -72,6 +72,9 @@
 (defvar norns-host "norns" "Default norns hostname.")
 (defvar norns-mdns-domain "local" "Default norns mDNS (aka zeroconf).")
 
+(defvar norns-docker-container "norns-test-dummy" "Default norns docker container name.")
+(defvar norns-local-mdns-domain "lan" "Default LAN mDNS (aka zeroconf), typically when accessing a docker instance of norns.")
+
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
 
 (defvar norns-maiden-ws-port 5555 "Default norns maiden REPL websocket port.")
@@ -154,11 +157,17 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
   (norns--core-untrampify-path-maybe (norns--core-curr-fq-path)))
 
 (defun norns--core-curr-host ()
-  "Get current hostname.
+  "Get current hostname (for maiden / sc).
 Defaults to \"localhost\" if not a TRAMP path."
-  (let* ((remote-host (--> (file-remote-p default-directory 'host)
-                           (s-chop-suffix (concat "." norns-mdns-domain) it))))
-    (or remote-host "localhost")))
+  (cond
+   ((and (file-remote-p default-directory 'host)
+         (s-starts-with? "/docker:" default-directory))
+    (concat "localhost." norns-local-mdns-domain))
+
+   (t
+    (let* ((remote-host (--> (file-remote-p default-directory 'host)
+                             (s-chop-suffix (concat "." norns-mdns-domain) it))))
+      (or remote-host "localhost")))))
 
 
 
@@ -320,9 +329,19 @@ ENSURE-COMINT-BUFF-EXISTS-FN."
   (f-directory? (norns--core-trampify-path-maybe "/home/we/dust")))
 
 (defun norns--make-default-norns-tramp-prefix ()
-  "Build the tramp prefix for default norns (`norns-user' @ `norns-host')."
-  (concat "/" tramp-default-method ":"
-          norns-user "@" norns-host (when norns-mdns-domain (concat "." norns-mdns-domain)) ":"))
+  "Build the tramp prefix for default norns (`norns-user' @ `norns-host').
+
+If `tramp-default-method' is \"docker\" we assume a local docker instance.
+In that case `norns-user' @ `norns-docker-container' gets used."
+  (let* ((hostname (cond
+                    ((string= tramp-default-method "docker") norns-docker-container)
+                    (t norns-host)))
+         (mdns-domain (cond
+                       ((string= tramp-default-method "docker") norns-local-mdns-domain)
+                       (t norns-mdns-domain)))
+         (fqdn (concat hostname "." mdns-domain)))
+    (concat "/" tramp-default-method ":"
+            norns-user "@" fqdn ":")))
 
 (defun norns--make-default-norns-tramp-path ()
   "Build the tramp path for default norns (`norns-user' @ `norns-host')."
@@ -580,6 +599,17 @@ Current norns is determined depending on the value of `norns-access-policy'."
          (host (norns--core-curr-host)))
     (switch-to-buffer (norns--ensure-host-maiden-buffer-exists host))))
 
+(defun norns-docker-maiden-repl ()
+  "Same as `norns-maiden-repl' but assuming a local docker instance.
+
+See values of `norns-docker-container' and `norns-local-mdns-domain' for the targeted instance."
+  (interactive)
+  (unless (assoc "docker" tramp-methods)
+    (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
+  (let ((norns-access-policy :default)
+        (tramp-default-method "docker"))
+    (call-interactively #'norns-maiden-repl)))
+
 (defun norns--maiden-repl-after-start (dd)
   "Force reconnection to maiden REPL upon (re)start.
 
@@ -739,6 +769,17 @@ Current norns is determined depending on the value of `norns-access-policy'."
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
     (switch-to-buffer (norns--ensure-host-sc-buffer-exists host))))
+
+(defun norns-docker-sc-repl ()
+  "Same as `norns-sc-repl' but assuming a local docker instance.
+
+See values of `norns-docker-container' and `norns-local-mdns-domain' for the targeted instance."
+  (interactive)
+  (unless (assoc "docker" tramp-methods)
+    (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
+  (let ((norns-access-policy :default)
+        (tramp-default-method "docker"))
+    (call-interactively #'norns-sc-repl)))
 
 (defun norns--sc-repl-after-start (dd)
   "Force reconnection to SuperCollider REPL upon (re)start.
