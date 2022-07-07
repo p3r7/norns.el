@@ -70,9 +70,11 @@
 
 (defvar norns-user "we" "Default norns user.")
 (defvar norns-host "norns" "Default norns hostname.")
+(defvar norns-http-port 80 "Default norns HTTP port.")
 (defvar norns-mdns-domain "local" "Default norns mDNS (aka zeroconf).")
 
 (defvar norns-docker-container "norns-test-dummy" "Default norns docker container name.")
+(defvar norns-docker-http-port 5000 "Default norns docker HTTP port.")
 (defvar norns-local-mdns-domain "lan" "Default LAN mDNS (aka zeroconf), typically when accessing a docker instance of norns.")
 
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
@@ -169,6 +171,15 @@ Defaults to \"localhost\" if not a TRAMP path."
                              (s-chop-suffix (concat "." norns-mdns-domain) it))))
       (or remote-host "localhost")))))
 
+(defun norns--core-curr-http-port ()
+  "Get current HTTP port (for maiden web)."
+  (cond
+   ((and (file-remote-p default-directory 'host)
+         (s-starts-with? "/docker:" default-directory))
+    norns-docker-http-port)
+
+   (t
+    norns-http-port)))
 
 
 ;; CORE - WEBSOCKET-BACKED COMINT BUFFER
@@ -636,9 +647,10 @@ Host is identified by it's path DD."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (dd default-directory)
-         (host (norns--core-curr-host)))
+         (host (norns--core-curr-host))
+         (port (number-to-string (norns--core-curr-http-port))))
     (request
-      (concat "http://" host "." norns-mdns-domain "/api/v1/unit/norns-matron.service")
+      (concat "http://" host ":" port "/api/v1/unit/norns-matron.service")
       :params '(("do" . "restart"))
       :parser 'json-read
       :success (cl-function
@@ -651,9 +663,10 @@ Host is identified by it's path DD."
   "Install norns SCRIPT-URL."
   (interactive "s> ")
   (let* ((default-directory (norns--location-from-access-policy))
-         (host (norns--core-curr-host)))
+         (host (norns--core-curr-host))
+         (port (number-to-string (norns--core-curr-http-port))))
     (request
-      (concat "http://" host "." norns-mdns-domain "/api/v1/project/install")
+      (concat "http://" host ":" port "/api/v1/project/install")
       :params `(("url" . ,script-url))
       :parser 'json-read
       :success (cl-function
@@ -808,9 +821,10 @@ Host is identified by it's path DD."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (dd default-directory)
-         (host (norns--core-curr-host)))
+         (host (norns--core-curr-host))
+         (port (number-to-string (norns--core-curr-http-port))))
     (request
-      (concat "http://" host "." norns-mdns-domain "/api/v1/unit/norns-sclang.service")
+      (concat "http://" host ":" port "/api/v1/unit/norns-sclang.service")
       :params '(("do" . "restart"))
       :parser 'json-read
       :success (cl-function
