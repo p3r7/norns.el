@@ -494,7 +494,9 @@ Also ensures the existence of maiden output buffer (stored in
 (defun norns--inject-inspect-lib ()
   "Inject inspect.lua library onto norns."
   (let* ((default-directory (norns--location-from-access-policy))
-         (dest-file (concat (temporary-file-directory) "inspect.lua")))
+         (tmp-dir (--> (temporary-file-directory)
+                       (if (s-ends-with? "/" it) it (concat it "/"))))
+         (dest-file (concat tmp-dir "inspect.lua")))
     (unless (file-exists-p dest-file)
       (url-copy-file norns-lua-lib-inspect-url dest-file))))
 
