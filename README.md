@@ -1,6 +1,6 @@
 # norns.el
 
-<div align=center><img alt="logo" width="572" height="222" src="icon.png"></div>
+<div align=center><img alt="logo" width="363" height="129" src="icon.png"></div>
 
 Interactive development environment for monome norns from Emacs.
 
