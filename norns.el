@@ -75,7 +75,9 @@
 
 (defvar norns-docker-container "norns-test-dummy" "Default norns docker container name.")
 (defvar norns-docker-http-port 5000 "Default norns docker HTTP port.")
-(defvar norns-local-mdns-domain "lan" "Default LAN mDNS (aka zeroconf), typically when accessing a docker instance of norns.")
+(defvar norns-local-mdns-domain "lan"
+  "Default LAN mDNS (aka zeroconf), typically when accessing a
+docker instance of norns.")
 
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
 
@@ -84,7 +86,9 @@
 (defvar norns-maiden-buffer-prefix "maiden" "Prefix for name of maiden REPL buffers.")
 (defvar norns-maiden-buff-alist nil "Alist containing HOST / MAIDEN-COMINT-BUFFER associations.")
 (defvar norns-maiden-repl-prompt "maiden>> " "Customizable maiden REPL buffer prompt.")
-(defconst norns-maiden-repl-prompt-internal "maiden>> " "Version of `norns-maiden-repl-prompt' for handling when it gets redefined at runtime.")
+(defconst norns-maiden-repl-prompt-internal "maiden>> "
+  "Version of `norns-maiden-repl-prompt' for handling when it gets
+redefined at runtime.")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 
 (defvar norns-sc-ws-port 5556 "Default norns SuperCollider REPL websocket port.")
@@ -92,11 +96,17 @@
 (defvar norns-sc-buffer-prefix "norns-sc" "Prefix for name of SuperCollider REPL buffers.")
 (defvar norns-sc-buff-alist nil "Alist containing HOST / SC-COMINT-BUFFER associations.")
 (defvar norns-sc-repl-prompt "sc>> " "Customizable SuperCollider REPL buffer prompt.")
-(defconst norns-sc-repl-prompt-internal "sc>> " "Version of `norns-sc-repl-prompt' for handling when it gets redefined at runtime.")
+(defconst norns-sc-repl-prompt-internal "sc>> "
+  "Version of `norns-sc-repl-prompt' for handling when it gets
+redefined at runtime.")
 
-(defvar norns-repl-switch-on-cmd t "If non-nil, switch to maiden/SuperCollider REPL buffer after sending it a command.")
+(defvar norns-repl-switch-on-cmd t
+  "If non-nil, switch to maiden/SuperCollider REPL buffer after
+sending it a command.")
 (defvar norns-repl-switch-fn #'switch-to-buffer-other-window "Function to use when `norns-repl-switch-on-cmd' is non-nil.")
-(defvar norns-repl-switch-no-focus t "If non-nil, don't have popping REPL window steal focus after calling `norns-repl-switch-fn'.")
+(defvar norns-repl-switch-no-focus t
+  "If non-nil, don't have popping REPL window steal focus after
+calling `norns-repl-switch-fn'.")
 
 (defvar norns-mode-lighter " norns" "Lighter for norns minor mode.")
 
@@ -180,6 +190,7 @@ Defaults to \"localhost\" if not a TRAMP path."
 
    (t
     norns-http-port)))
+
 
 
 ;; CORE - WEBSOCKET-BACKED COMINT BUFFER
@@ -440,11 +451,13 @@ Current norns is determined with
 ;; NORNS - MAIDEN
 
 (defun norns--maiden-output (host txt)
-  "Function to forward output TXT from maiden websocket to the corresponding comint buffer for HOST."
+  "Function to forward output TXT from maiden websocket to the
+corresponding comint buffer for HOST."
   (norns--comint-async-output-for-host 'norns-maiden-buff-alist host norns-maiden-repl-prompt-internal txt))
 
 (defun norns--register-maiden-buffer (host)
-  "Create a new maiden comint buffer for HOST and register it in `norns-maiden-buff-alist'."
+  "Create a new maiden comint buffer for HOST and register it in
+`norns-maiden-buff-alist'."
   (norns--comint-register-buffer-for-host 'norns-maiden-buff-alist host norns-maiden-buffer-prefix #'norns-maiden-repl-mode))
 
 (defun norns--ensure-host-maiden-buffer-exists (host)
@@ -556,7 +569,8 @@ Current norns is determined with
 
 (defun norns-load-current-script ()
   "Load currently visited script.
-If visiting a script folder, and more than 1 script is found in it, prompt user to select one."
+If visiting a script folder, and more than 1 script is found in
+it, prompt user to select one."
   (interactive)
   (let ((norns-access-policy :current))
     (norns--load-script-helper (norns-current-scripts))))
@@ -612,7 +626,8 @@ Current norns is determined depending on the value of `norns-access-policy'."
 (defun norns-docker-maiden-repl ()
   "Same as `norns-maiden-repl' but assuming a local docker instance.
 
-See values of `norns-docker-container' and `norns-local-mdns-domain' for the targeted instance."
+See values of `norns-docker-container' and
+`norns-local-mdns-domain' for the targeted instance."
   (interactive)
   (unless (assoc "docker" tramp-methods)
     (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
@@ -681,15 +696,18 @@ Host is identified by it's path DD."
 ;; NORNS - SC
 
 (defun norns--sc-output (host txt)
-  "Function to forward output TXT from SuperCollider websocket to the corresponding comint buffer for HOST."
+  "Function to forward output TXT from SuperCollider websocket to
+the corresponding comint buffer for HOST."
   (norns--comint-async-output-for-host 'norns-sc-buff-alist host norns-sc-repl-prompt-internal txt))
 
 (defun norns--register-sc-buffer (host)
-  "Create a new SuperCollider comint buffer for HOST and register it in `norns-sc-buff-alist'."
+  "Create a new SuperCollider comint buffer for HOST and register
+it in `norns-sc-buff-alist'."
   (norns--comint-register-buffer-for-host 'norns-sc-buff-alist host norns-sc-buffer-prefix #'norns-sc-repl-mode))
 
 (defun norns--ensure-host-sc-buffer-exists (host)
-  "Ensure that a SuperCollider comint buffer for HOST exists in `norns-sc-buff-alist'."
+  "Ensure that a SuperCollider comint buffer for HOST exists in
+`norns-sc-buff-alist'."
   (norns--comint-ensure-buffer-for-host-exists 'norns-sc-buff-alist host #'norns--register-sc-buffer))
 
 (defun norns--ensure-host-sc-ws-open (host)
@@ -705,7 +723,8 @@ in `norns-sc-buff-alist')."
                                      #'norns--sc-output))
 
 (defun norns-sc-send (cmd)
-  "Send CMD to norns via SuperCollider and eventually pop a window to the REPL buffer."
+  "Send CMD to norns via SuperCollider and eventually pop a window
+to the REPL buffer."
   (interactive "s> ")
 
   (cond
@@ -785,7 +804,8 @@ Current norns is determined depending on the value of `norns-access-policy'."
 (defun norns-docker-sc-repl ()
   "Same as `norns-sc-repl' but assuming a local docker instance.
 
-See values of `norns-docker-container' and `norns-local-mdns-domain' for the targeted instance."
+See values of `norns-docker-container' and
+`norns-local-mdns-domain' for the targeted instance."
   (interactive)
   (unless (assoc "docker" tramp-methods)
     (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
@@ -840,7 +860,8 @@ Host is identified by it's path DD."
 ;; SOURCE FILE MINOR MODE
 
 (defun norns-send (cmd)
-  "Prompt for a command and send it to norns, either to maiden or to the SuperCollider REPL depending on current buffer mode."
+  "Prompt for a command and send it to norns, either to maiden or
+to the SuperCollider REPL depending on current buffer mode."
   (interactive "s> ")
   (cond
    ((string= "lua-mode" major-mode)
@@ -851,7 +872,8 @@ Host is identified by it's path DD."
     (user-error "Not a Lua nor SuperCollider source file!"))))
 
 (defun norns-send-selection ()
-  "Send selection to norns, either to maiden or to the SuperCollider REPL depending on current buffer mode."
+  "Send selection to norns, either to maiden or to the
+SuperCollider REPL depending on current buffer mode."
   (interactive)
   (cond
    ((string= "lua-mode" major-mode)
@@ -871,7 +893,8 @@ Host is identified by it's path DD."
             mmap))
 
 (defun norns-mode-maybe-activate ()
-  "Helper function to bind to `lua-mode-hook' and `sclang-mode-hook', to activate `norns-mode' if applicable."
+  "Helper function to bind to `lua-mode-hook' and
+`sclang-mode-hook', to activate `norns-mode' if applicable."
   (when (norns--current-host-norns-p)
     (norns-mode 1)))
 
