@@ -132,6 +132,73 @@ calling `norns-repl-switch-fn'.")
 
 
 
+;; FONT LOCK
+
+(defgroup norns-lua-extra-font-lock nil
+  "Faces for highlighting text."
+  :prefix "norns-lua-extra-font-lock-"
+  :group 'faces)
+
+(defface norns-lua-extra-font-lock-norns-builtin
+  '((t :inherit font-lock-builtin-face))
+  "The face used to highlight norns' own builtin."
+  :group 'norns-lua-extra-font-lock)
+
+;; NB; instpired by `lua-mode''s `lua--builtins'
+(eval-and-compile
+  (defconst
+    norns--lua-builtins
+    (let*
+        ((modules
+          '("inf"
+            "include" "init" "cleanup" "redraw" "key" "enc"
+            "_menu" "_norns" "norns" "_startup" "engine"
+            ("_path" . ("enabled_mods" "dust" "data" "home" "tape" "code" "keyboard_layout"
+                        "favorites" "extn" "audio"))
+            ("screen" . ("update" "ping" "update_default" "update_low_battery" "aa" "clear" "level" "line_width" "line_cap" "line_join" "miter_limit" "move" "move_rel" "line" "line_rel" "arc" "circle" "rect" "curve" "curve_rel" "close" "stroke" "fill" "text" "text_rotate" "text_right" "text_center" "text_center_rotate" "text_extents" "font_face" "font_size" "pixel" "display_png" "load_png" "create_image" "display_image" "display_image_region" "draw_to" "peek" "poke" "rotate" "translate" "save" "blend_mode"))
+            ;; i/o
+            ("arc" . ("connect" "led"  "add" "remove"
+                      "all" "segment" "refresh" "delta"))
+            ("grid" . ("connect" "add" "remove"
+                       "led" "all" "refresh" "intensity" ))
+            ("midi" . ("connect" "event" "remove" "to_msg" "to_data"
+                       "send" "note_on" "note_off" "cc" "pitchbend" "key_pressure" "channel_pressure" "program_change" "start" "stop" "continue" "clock" "song_position" "song_select")))))
+
+      (cl-labels
+          ((module-name-re (x)
+                           (concat "\\(?1:\\_<"
+                                   (if (listp x) (car x) x)
+                                   "\\_>\\)"))
+           (module-members-re (x) (if (listp x)
+                                      (concat "\\(?:[ \t]*\\.[ \t]*"
+                                              "\\_<\\(?2:"
+                                              (regexp-opt (cdr x))
+                                              "\\)\\_>\\)?")
+                                    "")))
+
+        (concat
+         ;; common prefix:
+         ;; - beginning-of-line
+         ;; - or neither of [ '.', ':' ] to exclude "foo.string.rep"
+         ;; - or concatenation operator ".."
+         "\\(?:^\\|[^:. \t]\\|[.][.]\\)"
+         ;; optional whitespace
+         "[ \t]*"
+         "\\(?:"
+         ;; any of modules/functions
+         (mapconcat (lambda (x) (concat (module-name-re x)
+                                   (module-members-re x)))
+                    modules
+                    "\\|")
+         "\\)"))))
+  "A regexp that matches norns' Lua builtin functions & variables.")
+
+(defun norns--lua-make-font-lock-keywords ()
+  `((,norns--lua-builtins
+     (1 'norns-lua-extra-font-lock-norns-builtin) (2 'norns-lua-extra-font-lock-norns-builtin nil noerror))))
+
+
+
 ;; CORE - PATH
 
 (defun norns--core-curr-fq-path ()
@@ -890,7 +957,17 @@ SuperCollider REPL depending on current buffer mode."
             (define-key mmap (kbd "C-c ! r") #'norns-send-selection)
             (define-key mmap (kbd "C-c ! c") #'norns-send)
             (define-key mmap (kbd "C-c ! R") #'norns-load-current-script)
-            mmap))
+            mmap)
+
+  (when (string= "lua-mode" major-mode)
+    (font-lock-add-keywords nil (norns--lua-make-font-lock-keywords))
+    ;; (if (fboundp 'font-lock-flush)
+    ;;     (font-lock-flush)
+    ;;   (when font-lock-mode
+    ;;     (with-no-warnings (font-lock-fontify-buffer))))
+    )
+
+  )
 
 (defun norns-mode-maybe-activate ()
   "Helper function to bind to `lua-mode-hook' and
