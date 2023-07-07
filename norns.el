@@ -112,7 +112,7 @@ calling `norns-repl-switch-fn'.")
 
 
 
-;; CONST
+;; CONSTS - PATHS
 
 (defconst norns-script-path-prefix "/home/we/dust/code/" "Path of script dir on norns.")
 
@@ -132,37 +132,186 @@ calling `norns-repl-switch-fn'.")
 
 
 
-;; FONT LOCK
+;; CONSTS - LUA SYMBOLS
+
+(defconst norns-lua-special-fns
+  '("init" "cleanup"
+    "redraw"
+    "key" "enc"
+    ("osc" . ("event"))
+    ("midi" . ("add" "remove" "event"))
+    ("arc" . ("add" "remove"))
+    ("grid" . ("add" "remove"))
+    ("keyboard" . ("code" "char"))
+    ("gamepad" . ("dpad" "analog" "axis" "button")))
+  "List of norns script-redefinable special lua functions.")
+
+(defconst norns-lua-buitin-consts
+  '("inf")
+  "List of norns built-in lua constants.")
+
+(defconst norns-lua-buitin-globals
+  '("_norns"                            ; weaver
+    "_startup" "engine"
+    ("keyboard" . ("keymap" "selected_map"))
+    ("norns" . ("battery_current" "battery_percent" "blank" "cpu" "cpu_avg" "crow" "disk" "enc" "encoders" "expand_filesystem" "init_done" "is_norns" "is_shield" "menu" "menu_midi_event" "none" "platform" "pmap" "rerun" "script" "scripterror" "shutdown" "state" "system_cmd" "system_glob" "temp" "try" "version"))
+    ("_path" . ("enabled_mods" "dust" "data" "home" "tape" "code" "keyboard_layout"
+                "favorites" "extn" "audio"))
+    ("_menu" . ("page" "errormsg" "rebuild_params" "alt" "timer" "panels" "locked" "key" "previewfile" "keychar" "panel" "shownav" "gamepad_axis" "custom_gamepad_axis" "set_page" "mode" "enc" "scripterror" "showstats" "keycode" "draw_panel" "redraw" "penc" "m" "set_mode" "gamepad_button"))
+    )
+  "List of norns built-in global lua state vars.")
+
+
+(defconst norns-lua-buitin-lib-module-methods
+  '(
+    ;; scheduling
+    ("metro" . ("start" "stop"))
+    ("poll" . ("callback" "time" "start" "stop" "update"))
+    ;; params
+    ("params" . (
+                 ;; contructor
+                 "add" "add_separator" "add_group"
+                 "add_trigger" "add_option" "add_number" "add_control"
+                 "add_file" "add_text" "add_taper" "add_binary"
+                 "set_action"
+                 ;; visibility
+                 "hide" "show" "visible"
+                 ;; lookup props
+                 "print" "list" "get_id" "lookup_param" "t" "get_range" "get_allow_pmap"
+                 ;; value
+                 "get" "get_raw" "string"
+                 "set" "set_raw"
+                 "bang" "clear"
+                 ;; pset
+                 "write" "read" "delete" "default"
+                 ))
+    ;; i/o
+    ("midi" . ("send" "note_on" "note_off" "cc" "pitchbend" "key_pressure" "channel_pressure" "program_change" "start" "stop" "continue" "clock" "song_position" "song_select"))
+    ("arc" . ("led" "all" "segment" "refresh" "delta"))
+    ("grid" . ("led" "all" "refresh" "intensity" ))
+    ("gamepad" . ("up" "down" "left" "right"))
+    )
+  "List of norns built-in lua functions.")
+
+(defconst norns-lua-buitin-lib-module-fns
+  '(
+    "include"
+    ;; scheduling
+    ("clock" . ("run" "cancel" "sleep" "sleep" "sync" "tempo_change_handler"))
+    ("metro" . ("init" "new" "free" "free_all" "available" "assigned"))
+    ("poll" . ("list_names" "set"  "clear_all"))
+    ;; params
+    ("params" . ("action_read" "action_write" "action_delete"))
+    ;; UX
+    ("screen" . ("clear" "update" "update_default" "update_low_battery"
+                 "ping"
+                 "aa"  "level" "line_width" "line_cap" "line_join" "miter_limit"
+                 "move" "move_rel"
+                 "pixel"
+                 "line" "line_rel" "rect"
+                 "arc" "circle" "curve" "curve_rel"
+                 "close" "stroke" "fill"
+                 "text" "text_rotate" "text_right" "text_center" "text_center_rotate" "text_extents" "font_face" "font_size"
+                 "display_png" "load_png" "create_image" "display_image" "display_image_region" "draw_to"
+                 "peek" "poke"
+                 "rotate" "translate" "save" "blend_mode"))
+
+    ;; i/o
+    ("osc" . ("send"))
+    ("midi" . ("connect" "to_msg" "to_data"))
+    ("arc" . ("connect"))
+    ("grid" . ("connect"))
+    ;; utils
+    ("tab" . ("print" "sort" "count" "contains" "invert" "key" "lines" "split" "save" "load" "readonly" "gather" "update" "select_values"))
+    ("util" . ("time" "scandir" "file_exists" "file_size" "make_dir" "os_capture" "string_starts" "trim_string_to_width" "clamp" "linexp" "linlin" "explin" "expexp" "round" "round_up" "s_to_hms" "degs_to_rads" "rads_to_degs" "acronym" "wrap" "wrap_max"))
+    )
+  "List of norns built-in lua methods.")
+
+
+
+;; CORE
+
+(defun norns--deep-merge-alists (l1 l2)
+  (let ((l1c (copy-alist l1)))
+    (mapc (lambda (el)
+            (if (and (consp el)
+                     (assoc (car el) l1c))
+                (let* ((k (car el))
+                       (v (cdr el))
+                       (other-v (cdr (assoc k l1c))))
+                  ;; (push (cons k (append other-v v)) l1c) ; append (std way to replace value in alist)
+                  (setf (cdr (assoc k l1c)) (append other-v v))) ; set in place
+              ;; else, standard elem
+              (push el l1c)))
+          l2)
+    l1c))
+
+
+
+;; EXTRA FONT LOCK - LUA
 
 (defgroup norns-lua-extra-font-lock nil
   "Faces for highlighting text."
   :prefix "norns-lua-extra-font-lock-"
   :group 'faces)
 
+(defface norns-lua-extra-font-lock-norns-constant
+  '((t :inherit font-lock-constant-face))
+  "The face used to highlight norns' own builtin."
+  :group 'norns-lua-extra-font-lock)
+
 (defface norns-lua-extra-font-lock-norns-builtin
   '((t :inherit font-lock-builtin-face))
   "The face used to highlight norns' own builtin."
   :group 'norns-lua-extra-font-lock)
 
+(defface norns-lua-extra-font-lock-norns-special-fn
+  '((t :inherit font-lock-warning-face))
+  "The face used to highlight norns' own builtin."
+  :group 'norns-lua-extra-font-lock)
+
+(defun norns-lua-get-buitin-lib-modules ()
+  (-reduce #'norns--deep-merge-alists (list norns-lua-buitin-globals norns-lua-buitin-lib-module-fns norns-lua-buitin-lib-module-methods)))
+
+(eval-and-compile
+  (defconst
+    norns--lua-special-fns-rx
+    (cl-labels
+        ((module-name-re (x)
+                         (concat "\\(?1:\\_<"
+                                 (if (listp x) (car x) x)
+                                 "\\_>\\)"))
+         (module-members-re (x) (if (listp x)
+                                    (concat "\\(?:[ \t]*\\.[ \t]*"
+                                            "\\_<\\(?2:"
+                                            (regexp-opt (cdr x))
+                                            "\\)\\_>\\)?")
+                                  "")))
+
+      (concat
+       ;; common prefix:
+       ;; - beginning-of-line
+       ;; - or neither of [ '.', ':' ] to exclude "foo.string.rep"
+       ;; - or concatenation operator ".."
+       "\\(?:^\\|[^:. \t]\\|[.][.]\\)"
+       ;; optional whitespace
+       "[ \t]*"
+       "\\(?:"
+       ;; any of modules/functions
+       (mapconcat (lambda (x) (concat (module-name-re x)
+                                 (module-members-re x)))
+                  norns-lua-special-fns
+                  "\\|")
+       "\\)"))
+    "A regexp that matches norns' special script-level functions."))
+
+
 ;; NB; instpired by `lua-mode''s `lua--builtins'
 (eval-and-compile
   (defconst
-    norns--lua-builtins
+    norns--lua-builtins-rx
     (let*
-        ((modules
-          '("inf"
-            "include" "init" "cleanup" "redraw" "key" "enc"
-            "_menu" "_norns" "norns" "_startup" "engine"
-            ("_path" . ("enabled_mods" "dust" "data" "home" "tape" "code" "keyboard_layout"
-                        "favorites" "extn" "audio"))
-            ("screen" . ("update" "ping" "update_default" "update_low_battery" "aa" "clear" "level" "line_width" "line_cap" "line_join" "miter_limit" "move" "move_rel" "line" "line_rel" "arc" "circle" "rect" "curve" "curve_rel" "close" "stroke" "fill" "text" "text_rotate" "text_right" "text_center" "text_center_rotate" "text_extents" "font_face" "font_size" "pixel" "display_png" "load_png" "create_image" "display_image" "display_image_region" "draw_to" "peek" "poke" "rotate" "translate" "save" "blend_mode"))
-            ;; i/o
-            ("arc" . ("connect" "led"  "add" "remove"
-                      "all" "segment" "refresh" "delta"))
-            ("grid" . ("connect" "add" "remove"
-                       "led" "all" "refresh" "intensity" ))
-            ("midi" . ("connect" "event" "remove" "to_msg" "to_data"
-                       "send" "note_on" "note_off" "cc" "pitchbend" "key_pressure" "channel_pressure" "program_change" "start" "stop" "continue" "clock" "song_position" "song_select")))))
+        ((modules (norns-lua-get-buitin-lib-modules)))
 
       (cl-labels
           ((module-name-re (x)
@@ -190,12 +339,54 @@ calling `norns-repl-switch-fn'.")
                                    (module-members-re x)))
                     modules
                     "\\|")
+         "\\)")))
+    "A regexp that matches norns' Lua builtin functions & variables."))
+
+(eval-and-compile
+  (defconst
+    norns--lua-builtins-params-rx
+    (let*
+        ((modules
+          `(("params" . ,(cdr (assoc "params" norns-lua-buitin-lib-module-methods))))))
+
+      (cl-labels
+          ((module-name-re (x)
+                           (concat "\\(?1:\\_<"
+                                   (if (listp x) (car x) x)
+                                   "\\_>\\)"))
+           (module-members-re (x) (if (listp x)
+                                      (concat "\\(?:[ \t]*:[ \t]*"
+                                              "\\_<\\(?2:"
+                                              (regexp-opt (cdr x))
+                                              "\\)\\_>\\)?")
+                                    "")))
+
+        (concat
+         ;; common prefix:
+         ;; - beginning-of-line
+         ;; - or neither of [ '.', ':' ] to exclude "foo.string.rep"
+         ;; - or concatenation operator ".."
+         "\\(?:^\\|[^:. \t]\\|[.][.]\\)"
+         ;; optional whitespace
+         "[ \t]*"
+         "\\(?:"
+         ;; any of modules/functions
+         (mapconcat (lambda (x) (concat (module-name-re x)
+                                   (module-members-re x)))
+                    modules
+                    "\\|")
          "\\)"))))
-  "A regexp that matches norns' Lua builtin functions & variables.")
+  "A regexp that matches norns' Lua builtin global \"params\" object.")
 
 (defun norns--lua-make-font-lock-keywords ()
-  `((,norns--lua-builtins
-     (1 'norns-lua-extra-font-lock-norns-builtin) (2 'norns-lua-extra-font-lock-norns-builtin nil noerror))))
+  `((,norns--lua-builtins-rx
+     (1 'norns-lua-extra-font-lock-norns-builtin) (2 'norns-lua-extra-font-lock-norns-builtin nil noerror))
+    (,norns--lua-builtins-params-rx
+     (1 'norns-lua-extra-font-lock-norns-builtin) (2 'norns-lua-extra-font-lock-norns-builtin nil noerror))
+    (,norns--lua-special-fns-rx
+     (1 'norns-lua-extra-font-lock-norns-special-fn) (2 'norns-lua-extra-font-lock-norns-special-fn nil noerror))))
+
+
 
 
 
