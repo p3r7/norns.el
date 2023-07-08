@@ -777,11 +777,15 @@ If no symbol at point, prompt.
 
 Please note that it will only work properly for non-local lua vars."
   (interactive (list
-                (let ((tap (thing-at-point 'symbol)))
-                  (if tap
-                      (read-string (format "var (%s): " tap)
-                                   nil nil tap)
-                    (read-string "var: ")))))
+                (if (use-region-p)
+                    (let ((selection (buffer-substring (region-beginning) (region-end))))
+                      (read-string (format "var (%s): " selection)
+                                   nil nil selection))
+                  (let ((tap (thing-at-point 'symbol)))
+                    (if tap
+                        (read-string (format "var (%s): " tap)
+                                     nil nil tap)
+                      (read-string "var: "))))))
   (norns--inject-inspect-lib)
   (norns-maiden-send (s-join "; " (list "local inspect = require '/tmp/inspect'"
                                         (concat "print(inspect(" symbol "))")))))
