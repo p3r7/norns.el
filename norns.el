@@ -138,6 +138,7 @@ calling `norns-repl-switch-fn'.")
   '("init" "cleanup"
     "redraw"
     "key" "enc"
+    ("params" . ("action_read" "action_write" "action_delete"))
     ("osc" . ("event"))
     ("midi" . ("add" "remove" "event"))
     ("arc" . ("add" "remove"))
@@ -200,8 +201,6 @@ calling `norns-repl-switch-fn'.")
     ("clock" . ("run" "cancel" "sleep" "sleep" "sync" "tempo_change_handler"))
     ("metro" . ("init" "new" "free" "free_all" "available" "assigned"))
     ("poll" . ("list_names" "set"  "clear_all"))
-    ;; params
-    ("params" . ("action_read" "action_write" "action_delete"))
     ;; UX
     ("screen" . ("clear" "update" "update_default" "update_low_battery"
                  "ping"
