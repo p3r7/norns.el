@@ -5,7 +5,7 @@
 ;; Version: 0.0.1
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
-;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13"))
+;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(lua-mode "20221218.605"))
 ;;
 ;; SPDX-License-Identifier: MIT
 
@@ -62,6 +62,8 @@
 (require 'request)
 (require 'websocket)
 
+(require 'lua-mode)
+
 
 
 ;; VARS
@@ -90,6 +92,7 @@ docker instance of norns.")
   "Version of `norns-maiden-repl-prompt' for handling when it gets
 redefined at runtime.")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
+(defvar norns-lua-static-doc-url "https://monome.org/docs/norns/api/modules/")
 
 (defvar norns-sc-ws-port 5556 "Default norns SuperCollider REPL websocket port.")
 (defvar norns-sc-ws-socket-alist nil "Alist containing HOST / SC-WS-SOCKET associations.")
@@ -385,6 +388,31 @@ calling `norns-repl-switch-fn'.")
     (,norns--lua-special-fns-rx
      (1 'norns-lua-extra-font-lock-norns-special-fn) (2 'norns-lua-extra-font-lock-norns-special-fn nil noerror))))
 
+
+
+;; DOC
+
+(defvar norns--lua-modules-doc-aliases
+  '(("screen" . "Screen")
+    ("tab" . "lib.tabutil")
+    ("util" . "lib.util"))
+  "Aliases between norns lua modules as found in code and reference in doc")
+
+;; inspired by `lua-search-documentation'
+(defun norns--std-lua-search-doc (fn)
+  (let ((url (concat lua-documentation-url "#pdf-" fn)))
+    (funcall lua-documentation-function url)))
+
+(defun norns--norns-lua-search-doc (fn)
+  (let* ((module (car (s-split-up-to "." fn 1)))
+         (url (concat norns-lua-static-doc-url module ".html#" fn)))
+    (funcall lua-documentation-function url)))
+
+(defun norns--lua-fn-doc ()
+  (interactive)
+  (let ((fn (lua-funcname-at-point)))
+    (norns--std-lua-search-doc fn)
+    ))
 
 
 
@@ -792,6 +820,11 @@ Please note that it will only work properly for non-local lua vars."
 
 
 ;; COMMANDS - SCRIPT LOAD
+
+(defun norns-rerun ()
+  "Rerun current script, if any."
+  (interactive)
+  (norns-maiden-send "if norns.state.name ~= \"none\" then norns.rerun() end"))
 
 (defun norns-load-script-raw (script-name)
   "Ask norns to load SCRIPT-NAME."
