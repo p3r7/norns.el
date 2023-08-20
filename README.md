@@ -84,6 +84,24 @@ Take a screenshot of norns screen. Save it on norns itself under `norns-screensh
   (add-hook 'sclang-mode-mode-hook #'norns-mode-maybe-activate))
 ```
 
+Additionally one can map keyboard shortcuts:
+
+```el
+(use-package norns
+  :bind (
+         :map norns-mode-map
+         ("C-c e b" . norns-load-current-script)
+         ("C-c e r" . norns-send-selection)
+
+         :map norns-maiden-repl-mode-map
+         ("C-c e b" . norns-rerun)
+
+         :map norns-sc-repl-mode-map
+         ("C-." . norns-sc-stop))
+    ;; [...]
+    )
+```
+
 
 ## Configuration
 
