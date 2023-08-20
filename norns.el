@@ -1047,6 +1047,12 @@ to the REPL buffer."
 
    (:default (message "no selection"))))
 
+(defun norns-sc-stop ()
+  "Like sending `C-.' in Supercollider IDE.
+You can map it to `C-.' (like Supercollider IDE) or `C-c C-s' (like scel)."
+  (interactive)
+  (norns-sc-send "CmdPeriod.run"))
+
 
 
 ;; MAJOR MODE - SC REPL
