@@ -122,9 +122,9 @@ calling `norns-repl-switch-fn'.")
 (defconst norns-script-rx
   (rx bol
       (literal norns-script-path-prefix)
-      (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_")))
+      (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_" ".")))
       "/"
-      (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_"))) ".lua"
+      (group (one-or-more (any "a-z" "A-Z" "0-9" "-" "_" "."))) ".lua"
       eol))
 
 (defconst norns-in-script-dir-rx
