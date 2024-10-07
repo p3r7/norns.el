@@ -453,18 +453,28 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
   "Get current buffer filesystem path."
   (norns--core-untrampify-path-maybe (norns--core-curr-fq-path)))
 
-(defun norns--core-curr-host ()
-  "Get current hostname (for maiden / sc).
+(defun norns--sans-mdns (host)
+  "Remove any mDNS suffix from hostname HOST."
+  (--> host
+       (s-chop-suffix (concat "." norns-mdns-domain) it)
+       (s-chop-suffix (concat "." norns-local-mdns-domain) it)))
+
+(defun norns--core-curr-host-sans-mdns ()
+  "Get current hostname (for maiden / sc), sans mDNS domain suffix.
 Defaults to \"localhost\" if not a TRAMP path."
   (cond
    ((and (file-remote-p default-directory 'host)
          (s-starts-with? "/docker:" default-directory))
-    (concat "localhost." norns-local-mdns-domain))
+    "localhost")
 
    (t
-    (let* ((remote-host (--> (file-remote-p default-directory 'host)
-                             (s-chop-suffix (concat "." norns-mdns-domain) it))))
+    (let ((remote-host (--> (file-remote-p default-directory 'host)
+                            (norns--sans-mdns it))))
       (or remote-host "localhost")))))
+
+(defun norns--core-curr-host ()
+  "Get current hostname (for maiden / sc)."
+  (concat (norns--core-curr-host-sans-mdns) "." norns-local-mdns-domain))
 
 (defun norns--core-curr-http-port ()
   "Get current HTTP port (for maiden web)."
