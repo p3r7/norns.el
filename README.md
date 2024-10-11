@@ -31,7 +31,7 @@ Additionally one can map keyboard shortcuts:
          ("C-c e b" . norns-load-current-script)
          ("C-c e r" . norns-send-selection)
 
-         :map norns-maiden-repl-mode-map
+         :map norns-matron-repl-mode-map
          ("C-c e b" . norns-rerun)
 
          :map norns-sc-repl-mode-map
@@ -58,17 +58,17 @@ All commands (unless specified otherwise) will analyze if currently visited file
 
 If it's the case, this particular norns is targeted by the command execution. Otherwise the default norns instance (configurable w/ `norns-host` / `norns-mdns-domain` is targeted instead).
 
-A maiden REPL (`*maiden/<NORNS_HOSTNAME>*`) or SuperCollider REPL (`*norns-sc/<NORNS_HOSTNAME>*`) is spawned and pops in a new window.
+A matron REPL (`*matron/<NORNS_HOSTNAME>*`) or SuperCollider REPL (`*norns-sc/<NORNS_HOSTNAME>*`) is spawned and pops in a new window.
 
 Those behaviors can be customized by tweaking the values of `norns-access-policy` and `norns-repl-switch-on-cmd`.
 
 
-#### `(norns-maiden-repl)` / `(norns-sc-repl)`
+#### `(norns-matron-repl)` / `(norns-sc-repl)`
 
-Spawn and switch to maiden REPL / SuperCollider REPL for norns instance.
+Spawn and switch to matron REPL / SuperCollider REPL for norns instance.
 
 
-#### `(norns-docker-maiden-repl)` / `(norns-docker-sc-repl)`
+#### `(norns-docker-matron-repl)` / `(norns-docker-sc-repl)`
 
 Same as above but connects to a localy-running dockerized norns instance (see [winder/norns-dev](https://github.com/winder/norns-dev/)).
 
@@ -77,14 +77,14 @@ Requires package [docker-tramp](https://github.com/emacs-pe/docker-tramp.el) to 
 If using a custom container name, tweak value of `norns-docker-container`. Likewise, you may need to adjust the value of `norns-local-mdns-domain` if your LAN domain is other than `lan`.
 
 
-#### `(norns-maiden-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
+#### `(norns-matron-send TXT)` / `(norns-sc-send TXT)` / `(norns-send TXT)`
 
-Prompt user to enter raw text `TXT` command and sends it to maiden / SuperCollider.
+Prompt user to enter raw text `TXT` command and sends it to matron / SuperCollider.
 
 Generic version (`norns-send`) auto-selects the right command according to current buffer mode.
 
 
-#### `(norns-maiden-send-selection)` / `(norns-sc-send-selection)` / `(norns-send-selection)`
+#### `(norns-matron-send-selection)` / `(norns-sc-send-selection)` / `(norns-send-selection)`
 
 Same as above, but acts on selection (*active region* in Emacs lingo).
 
@@ -103,7 +103,7 @@ Prompt user for list of available norns scripts and launch the one selected.
 
 #### `(norns-restart)` / `(norns-reboot)`
 
-`norns-restart` restarts all norns services. Respawns the maiden and SuperCollider REPLs.
+`norns-restart` restarts all norns services. Respawns the matron and SuperCollider REPLs.
 
 `norns-reboot` performs a full OS reboot (for when things get stuck bad).
 
@@ -125,7 +125,7 @@ To always use the default instance (absolute lookup), change this value to `:def
 
 The default norns instance declaration is accessible through vars `norns-host`, `norns-mdns-domain` and `norns-local-mdns-domain`. `norns-mdns-domain` is the mDNS domain advertized by norns (typically `local`) and `norns-local-mdns-domain` is the one of the local network that both norns and your computer connect to (generally `lan` or `home`).
 
-On command execution, the maiden or SuperCollider buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-repl-switch-on-cmd` to `nil`) w/ method `norns-repl-switch-fn` (defaults to `switch-to-buffer-other-window`).
+On command execution, the matron or SuperCollider buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-repl-switch-on-cmd` to `nil`) w/ method `norns-repl-switch-fn` (defaults to `switch-to-buffer-other-window`).
 
 This new window will not steal focus, but one can change that by setting `norns-repl-switch-no-focus` to `nil`.
 
@@ -194,9 +194,9 @@ In the meantime, you could add back the OSC-based feature by dropping that in yo
 
 ## Implementation details
 
-Major modes for REPLs (`norns-maiden-repl-mode` / `norns-sc-repl-mode`) are based on `comint-mode`.
+Major modes for REPLs (`norns-matron-repl-mode` / `norns-sc-repl-mode`) are based on `comint-mode`.
 
-As those communications doesn't rely on a process (but websocket communication instead), we bind a "fake" process and handle output manually by calling `comint-output-filter` (inside of `norns--maiden-output` / `norns--sc-output`).
+As those communications doesn't rely on a process (but websocket communication instead), we bind a "fake" process and handle output manually by calling `comint-output-filter` (inside of `norns--matron-output` / `norns--sc-output`).
 
 This trick comes from `ielm`.
 

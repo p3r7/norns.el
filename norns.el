@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2022 Jordan Besly
 ;;
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
 ;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(lua-mode "20221218.605"))
@@ -13,8 +13,8 @@
 ;;
 ;; This package provides an interactive development for monome norns.
 ;;
-;; This package allows to spawn REPLs that bind to remote maiden and
-;; SuperCollider REPLs (via commands `norns-maiden-repl', `norns-sc-repl')
+;; This package allows to spawn REPLs that bind to remote matron and
+;; SuperCollider REPLs (via commands `norns-matron-repl', `norns-sc-repl')
 ;; and associated commands to interact with them from Lua and SuperCollider
 ;; source files.
 ;;
@@ -26,16 +26,16 @@
 ;; `norns-access-policy' to ":current" or ":default".
 
 ;;
-;; To connect to a REPL, use commands `norns-maiden-repl' and
+;; To connect to a REPL, use commands `norns-matron-repl' and
 ;; `norns-sc-repl'.  Those REPL provide prompts but one can send text
-;; through the minibuffer with `norns-maiden-send' and `norns-sc-send'.
+;; through the minibuffer with `norns-matron-send' and `norns-sc-send'.
 ;;
 ;; Commands that send input to any of the REPL will automatically make the
 ;; REPL pop in a window if not already visible.  This can be turned off by
 ;; setting `norns-repl-switch-on-cmd' to nil.
 ;;
 ;; Additionally, to send a selected region to the appropriate REPL, use
-;; `norns-maiden-send-selection'.
+;; `norns-matron-send-selection'.
 ;;
 ;; The currently visited script can be loaded with
 ;; `norns-load-current-script'.  If current script has several
@@ -84,13 +84,13 @@ Routers generally have this set to \"lan\" or \"home\".")
 
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
 
-(defvar norns-maiden-ws-port 5555 "Default norns maiden REPL websocket port.")
-(defvar norns-maiden-ws-socket-alist nil "Alist containing HOST / MAIDEN-WS-SOCKET associations.")
-(defvar norns-maiden-buffer-prefix "maiden" "Prefix for name of maiden REPL buffers.")
-(defvar norns-maiden-buff-alist nil "Alist containing HOST / MAIDEN-COMINT-BUFFER associations.")
-(defvar norns-maiden-repl-prompt "maiden>> " "Customizable maiden REPL buffer prompt.")
-(defconst norns-maiden-repl-prompt-internal "maiden>> "
-  "Version of `norns-maiden-repl-prompt' for handling when it gets
+(defvar norns-matron-ws-port 5555 "Default norns matron REPL websocket port.")
+(defvar norns-matron-ws-socket-alist nil "Alist containing HOST / MATRON-WS-SOCKET associations.")
+(defvar norns-matron-buffer-prefix "matron" "Prefix for name of matron REPL buffers.")
+(defvar norns-matron-buff-alist nil "Alist containing HOST / MATRON-COMINT-BUFFER associations.")
+(defvar norns-matron-repl-prompt "matron>> " "Customizable matron REPL buffer prompt.")
+(defconst norns-matron-repl-prompt-internal "matron>> "
+  "Version of `norns-matron-repl-prompt' for handling when it gets
 redefined at runtime.")
 (defvar norns-lua-lib-inspect-url "https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua")
 (defvar norns-lua-static-doc-url "https://monome.org/docs/norns/api/modules/")
@@ -105,7 +105,7 @@ redefined at runtime.")
 redefined at runtime.")
 
 (defvar norns-repl-switch-on-cmd t
-  "If non-nil, switch to maiden/SuperCollider REPL buffer after
+  "If non-nil, switch to matron/SuperCollider REPL buffer after
 sending it a command.")
 (defvar norns-repl-switch-fn #'switch-to-buffer-other-window "Function to use when `norns-repl-switch-on-cmd' is non-nil.")
 (defvar norns-repl-switch-no-focus t
@@ -465,7 +465,7 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
     (concat host "." domain)))
 
 (defun norns--core-curr-host-sans-domain ()
-  "Get current hostname (for maiden / sc), sans mDNS domain suffix.
+  "Get current hostname (for matron / sc), sans mDNS domain suffix.
 Defaults to \"localhost\" if not a TRAMP path."
   (let ((remote-host (file-remote-p default-directory 'host)))
 
@@ -481,11 +481,11 @@ Defaults to \"localhost\" if not a TRAMP path."
       "localhost"))))
 
 (defun norns--core-curr-host ()
-  "Get current hostname (for maiden / sc)."
+  "Get current hostname (for matron / sc)."
   (norns--host-with-domain (norns--core-curr-host-sans-domain)))
 
 (defun norns--core-curr-http-port ()
-  "Get current HTTP port (for maiden web)."
+  "Get current HTTP port (for matron web)."
   (cond
    ((and (file-remote-p default-directory 'host)
          (s-starts-with? "/docker:" default-directory))
@@ -750,58 +750,58 @@ Current norns is determined with
 
 
 
-;; NORNS - MAIDEN
+;; NORNS - MATRON
 
-(defun norns--maiden-output (host txt)
-  "Function to forward output TXT from maiden websocket to the
+(defun norns--matron-output (host txt)
+  "Function to forward output TXT from matron websocket to the
 corresponding comint buffer for HOST."
-  (norns--comint-async-output-for-host 'norns-maiden-buff-alist host norns-maiden-repl-prompt-internal txt))
+  (norns--comint-async-output-for-host 'norns-matron-buff-alist host norns-matron-repl-prompt-internal txt))
 
-(defun norns--register-maiden-buffer (host)
-  "Create a new maiden comint buffer for HOST and register it in
-`norns-maiden-buff-alist'."
-  (norns--comint-register-buffer-for-host 'norns-maiden-buff-alist host norns-maiden-buffer-prefix #'norns-maiden-repl-mode))
+(defun norns--register-matron-buffer (host)
+  "Create a new matron comint buffer for HOST and register it in
+`norns-matron-buff-alist'."
+  (norns--comint-register-buffer-for-host 'norns-matron-buff-alist host norns-matron-buffer-prefix #'norns-matron-repl-mode))
 
-(defun norns--ensure-host-maiden-buffer-exists (host)
-  "Ensure that a maiden comint buffer for HOST exists in `norns-maiden-buff-alist'."
-  (norns--comint-ensure-buffer-for-host-exists 'norns-maiden-buff-alist host #'norns--register-maiden-buffer))
+(defun norns--ensure-host-matron-buffer-exists (host)
+  "Ensure that a matron comint buffer for HOST exists in `norns-matron-buff-alist'."
+  (norns--comint-ensure-buffer-for-host-exists 'norns-matron-buff-alist host #'norns--register-matron-buffer))
 
-(defun norns--ensure-host-maiden-ws-open (host)
+(defun norns--ensure-host-matron-ws-open (host)
   "Ensure socket for norns HOST is open.
 
-The REPL (comint buffer) for HOST is stored in `norns-maiden-ws-socket-alist'.
+The REPL (comint buffer) for HOST is stored in `norns-matron-ws-socket-alist'.
 
-Also ensures the existence of maiden output buffer (stored in
-`norns-maiden-buff-alist')."
-  (norns--comint-ensure-host-ws-open 'norns-maiden-ws-socket-alist host
-                                     norns-maiden-ws-port
-                                     #'norns--ensure-host-maiden-buffer-exists
-                                     #'norns--maiden-output))
+Also ensures the existence of matron output buffer (stored in
+`norns-matron-buff-alist')."
+  (norns--comint-ensure-host-ws-open 'norns-matron-ws-socket-alist host
+                                     norns-matron-ws-port
+                                     #'norns--ensure-host-matron-buffer-exists
+                                     #'norns--matron-output))
 
-(defun norns-maiden-send (cmd)
-  "Send CMD to norns via maiden and eventually pop a window to the REPL buffer."
+(defun norns-matron-send (cmd)
+  "Send CMD to norns via matron and eventually pop a window to the REPL buffer."
   (interactive "s> ")
   (cond
    ((string= ";restart" cmd)
-    (norns-maiden-restart))
+    (norns-matron-restart))
 
    ;; REVIEW: isn't working, might be a CORS thing
    ;; ((s-starts-with? ";install " cmd)
-   ;; (norns-maiden-install-script (s-chop-prefix ";install " cmd)))
+   ;; (norns-matron-install-script (s-chop-prefix ";install " cmd)))
 
    (:default
     (norns--ws-send (s-replace "\n" "; " cmd)
-                    'norns-maiden-ws-socket-alist
-                    'norns-maiden-buff-alist
-                    #'norns--ensure-host-maiden-ws-open
-                    #'norns--ensure-host-maiden-buffer-exists))))
+                    'norns-matron-ws-socket-alist
+                    'norns-matron-buff-alist
+                    #'norns--ensure-host-matron-ws-open
+                    #'norns--ensure-host-matron-buffer-exists))))
 
-(defun norns-maiden-send-selection ()
-  "Send selected buffer region to maiden."
+(defun norns-matron-send-selection ()
+  "Send selected buffer region to matron."
   (interactive)
   (cond
    ((use-region-p)
-    (norns-maiden-send (buffer-substring (region-beginning) (region-end)))
+    (norns-matron-send (buffer-substring (region-beginning) (region-end)))
     (deactivate-mark))
 
    (:default (message "no selection"))))
@@ -815,8 +815,8 @@ Also ensures the existence of maiden output buffer (stored in
     (unless (file-exists-p dest-file)
       (url-copy-file norns-lua-lib-inspect-url dest-file))))
 
-(defun norns-maiden-inspect-symbol (symbol)
-  "Inspect value of SYMBOL at point in maiden.
+(defun norns-matron-inspect-symbol (symbol)
+  "Inspect value of SYMBOL at point in matron.
 If no symbol at point, prompt.
 
 Please note that it will only work properly for non-local lua vars."
@@ -831,7 +831,7 @@ Please note that it will only work properly for non-local lua vars."
                                      nil nil tap)
                       (read-string "var: "))))))
   (norns--inject-inspect-lib)
-  (norns-maiden-send (s-join "; " (list "local inspect = require '/tmp/inspect'"
+  (norns-matron-send (s-join "; " (list "local inspect = require '/tmp/inspect'"
                                         (concat "print(inspect(" symbol "))")))))
 
 
@@ -841,14 +841,14 @@ Please note that it will only work properly for non-local lua vars."
 (defun norns-rerun ()
   "Rerun current script, if any."
   (interactive)
-  (norns-maiden-send "if norns.state.name ~= \"none\" then norns.rerun() end"))
+  (norns-matron-send "if norns.state.name ~= \"none\" then norns.rerun() end"))
 
 (defun norns-load-script-raw (script-name)
   "Ask norns to load SCRIPT-NAME."
   (interactive "sName: ")
   (unless (s-contains? "/" script-name)
     (setq script-name (concat script-name "/" script-name)))
-  (norns-maiden-send (concat "norns.script.load(\"code/" script-name ".lua\")")))
+  (norns-matron-send (concat "norns.script.load(\"code/" script-name ".lua\")")))
 
 (defun norns--load-script-helper (scripts)
   "Prompt user to select one of the SCRIPTS and then ask for norns to launch it."
@@ -888,20 +888,20 @@ it, prompt user to select one."
 
 
 
-;; MAJOR MODE - MAIDEN REPL
+;; MAJOR MODE - MATRON REPL
 
-(defun norns--maiden-input-sender (_proc input)
-  "Send comint INPUT to norns' maiden (via websocket).
-Output is processed asyncronously by `norns--maiden-output'."
-  (norns-maiden-send input))
+(defun norns--matron-input-sender (_proc input)
+  "Send comint INPUT to norns' matron (via websocket).
+Output is processed asyncronously by `norns--matron-output'."
+  (norns-matron-send input))
 
-(define-derived-mode norns-maiden-repl-mode comint-mode "maiden-repl"
-  "Major mode for interracting w/ a monome norns' maiden REPL."
+(define-derived-mode norns-matron-repl-mode comint-mode "matron-repl"
+  "Major mode for interracting w/ a monome norns' matron REPL."
   :keymap (let ((mmap (make-sparse-keymap)))
             mmap)
 
-  (setq comint-prompt-regexp (concat "^" (regexp-quote norns-maiden-repl-prompt)))
-  (setq comint-input-sender #'norns--maiden-input-sender)
+  (setq comint-prompt-regexp (concat "^" (regexp-quote norns-matron-repl-prompt)))
+  (setq comint-input-sender #'norns--matron-input-sender)
   (setq comint-process-echoes nil)
 
   ;; A dummy process to keep comint happy. It will never get any input
@@ -909,8 +909,8 @@ Output is processed asyncronously by `norns--maiden-output'."
     ;; Was cat, but on non-Unix platforms that might not exist, so
     ;; use hexl instead, which is part of the Emacs distribution.
     (condition-case nil
-        (start-process "maiden" (current-buffer) "hexl")
-      (file-error (start-process "maiden" (current-buffer) "cat")))
+        (start-process "matron" (current-buffer) "hexl")
+      (file-error (start-process "matron" (current-buffer) "cat")))
     (set-process-query-on-exit-flag (norns--comint-process) nil)
     (goto-char (point-max))
 
@@ -920,22 +920,22 @@ Output is processed asyncronously by `norns--maiden-output'."
         (add-text-properties
          (point-min) (point-max)
          '(rear-nonsticky t field output inhibit-line-move-field-capture t))))
-    (comint-output-filter (norns--comint-process) norns-maiden-repl-prompt-internal)
+    (comint-output-filter (norns--comint-process) norns-matron-repl-prompt-internal)
     (set-marker comint-last-input-start (norns--comint-pm))
     (set-process-filter (get-buffer-process (current-buffer)) #'comint-output-filter)))
 
-(defun norns-maiden-repl ()
-  "Connect to the maiden REPL for current norns and switch to it.
+(defun norns-matron-repl ()
+  "Connect to the matron REPL for current norns and switch to it.
 If already connected, just switch to the buffer.
 
 Current norns is determined depending on the value of `norns-access-policy'."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (host (norns--core-curr-host)))
-    (switch-to-buffer (norns--ensure-host-maiden-buffer-exists host))))
+    (switch-to-buffer (norns--ensure-host-matron-buffer-exists host))))
 
-(defun norns-docker-maiden-repl ()
-  "Same as `norns-maiden-repl' but assuming a local docker instance.
+(defun norns-docker-matron-repl ()
+  "Same as `norns-matron-repl' but assuming a local docker instance.
 
 See values of `norns-docker-container' for the targeted instance."
   (interactive)
@@ -943,21 +943,21 @@ See values of `norns-docker-container' for the targeted instance."
     (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
   (let ((norns-access-policy :default)
         (tramp-default-method "docker"))
-    (call-interactively #'norns-maiden-repl)))
+    (call-interactively #'norns-matron-repl)))
 
-(defun norns--maiden-repl-after-start (dd)
-  "Force reconnection to maiden REPL upon (re)start.
+(defun norns--matron-repl-after-start (dd)
+  "Force reconnection to matron REPL upon (re)start.
 
 Host is identified by it's path DD."
   (let* ((default-directory dd)
          (host (norns--core-curr-host))
          (frame (selected-frame))
          (win (selected-window))
-         (maiden-buff (norns--ensure-host-maiden-buffer-exists host))
-         (maiden-visiting-windows (get-buffer-window-list maiden-buff)))
+         (matron-buff (norns--ensure-host-matron-buffer-exists host))
+         (matron-visiting-windows (get-buffer-window-list matron-buff)))
     (when (and norns-repl-switch-on-cmd
-               (null maiden-visiting-windows))
-      (funcall norns-repl-switch-fn maiden-buff)
+               (null matron-visiting-windows))
+      (funcall norns-repl-switch-fn matron-buff)
       (goto-char (point-max))
       (when norns-repl-switch-no-focus
         (set-frame-selected-window frame win))))
@@ -967,10 +967,10 @@ Host is identified by it's path DD."
    0.1 nil
    `(lambda ()
       (let ((default-directory ,dd))
-        (norns-maiden-send "")))))
+        (norns-matron-send "")))))
 
-(defun norns-maiden-restart ()
-  "Restart maiden REPL for current norns."
+(defun norns-matron-restart ()
+  "Restart matron REPL for current norns."
   (interactive)
   (let* ((default-directory (norns--location-from-access-policy))
          (dd default-directory)
@@ -982,11 +982,11 @@ Host is identified by it's path DD."
       :parser 'json-read
       :success (cl-function
                 (lambda (&key _data &allow-other-keys)
-                  (norns--maiden-repl-after-start dd)
+                  (norns--matron-repl-after-start dd)
                   ;; (message "Got: %S" data)
                   )))))
 
-(defun norns-maiden-install-script (script-url)
+(defun norns-matron-install-script (script-url)
   "Install norns SCRIPT-URL."
   (interactive "s> ")
   (let* ((default-directory (norns--location-from-access-policy))
@@ -1175,24 +1175,24 @@ Host is identified by it's path DD."
 ;; SOURCE FILE MINOR MODE
 
 (defun norns-send (cmd)
-  "Prompt for a command and send it to norns, either to maiden or
+  "Prompt for a command and send it to norns, either to matron or
 to the SuperCollider REPL depending on current buffer mode."
   (interactive "s> ")
   (cond
    ((string= "lua-mode" major-mode)
-    (norns-maiden-send cmd))
+    (norns-matron-send cmd))
    ((string= "sclang-mode" major-mode)
     (norns-sc-send cmd))
    (:default
     (user-error "Not a Lua nor SuperCollider source file!"))))
 
 (defun norns-send-selection ()
-  "Send selection to norns, either to maiden or to the
+  "Send selection to norns, either to matron or to the
 SuperCollider REPL depending on current buffer mode."
   (interactive)
   (cond
    ((string= "lua-mode" major-mode)
-    (call-interactively #'norns-maiden-send-selection))
+    (call-interactively #'norns-matron-send-selection))
    ((string= "sclang-mode" major-mode)
     (call-interactively #'norns-sc-send-selection))
    (:default
@@ -1230,7 +1230,7 @@ SuperCollider REPL depending on current buffer mode."
 (defun norns-restart ()
   "Restart current norns instance services.
 
-Auto re-spawns maiden and SuperCollider REPLs to catch startup
+Auto re-spawns matron and SuperCollider REPLs to catch startup
 logs.
 
 Current norns is determined with
@@ -1243,7 +1243,7 @@ Current norns is determined with
     (shell-command "nohup systemctl restart norns-crone > /dev/null")
     (shell-command "nohup systemctl restart norns-matron > /dev/null")
     (norns--sc-repl-after-start dd)
-    (norns--maiden-repl-after-start dd)))
+    (norns--matron-repl-after-start dd)))
 
 (defun norns-reboot ()
   "Reboot current norns instance OS.
@@ -1268,7 +1268,7 @@ Current norns is determined with
 Save it as FILENAME.png inside `norns-screenshot-folder'."
   (interactive "sFileame: ")
   (let ((norns-repl-switch-on-cmd nil))
-    (norns-maiden-send (concat "_norns.screen_export_png(\"" norns-screenshot-folder filename ".png\")"))))
+    (norns-matron-send (concat "_norns.screen_export_png(\"" norns-screenshot-folder filename ".png\")"))))
 
 (defun norns-screenshot (filename)
   "Take a screenshot of norns screen.
@@ -1282,6 +1282,17 @@ Save it as FILENAME.png inside `norns-screenshot-folder'."
       (let ((default-directory (norns--location-from-access-policy))
             (screenshot-file (concat norns-screenshot-folder ,filename ".png")))
         (shell-command (concat "convert " screenshot-file " -gamma 1.25 -filter point -resize 400% -gravity center -background black -extent 120% " screenshot-file))))))
+
+
+
+;; DEPRECATED FNS
+
+(define-obsolete-function-alias #'norns-maiden-send #'norns-matron-send "20241011")
+(define-obsolete-function-alias #'norns-maiden-send-selection #'norns-matron-send-selection "20241011")
+(define-obsolete-function-alias #'norns-maiden-inspect-symbol #'norns-matron-inspect-symbol "20241011")
+(define-obsolete-function-alias #'norns-maiden-repl #'norns-matron-repl "20241011")
+(define-obsolete-function-alias #'norns-maiden-restart #'norns-matron-restart "20241011")
+(define-obsolete-function-alias #'norns-maiden-install-script #'norns-matron-install-script "20241011")
 
 
 
