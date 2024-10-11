@@ -778,6 +778,12 @@ Also ensures the existence of matron output buffer (stored in
                                      #'norns--ensure-host-matron-buffer-exists
                                      #'norns--matron-output))
 
+(defun norns--remove-lua-comments (cmd)
+  "Remove Lua comments from CMD."
+  (--> cmd
+       (replace-regexp-in-string "--\\[\\[\\(.\\|\n\\)*?\\]\\]" "" it) ; multi-line:  --[[ ... ]]
+       (replace-regexp-in-string "--.*" "" it)))             ; single-line: -- ...
+
 (defun norns-matron-send (cmd)
   "Send CMD to norns via matron and eventually pop a window to the REPL buffer."
   (interactive "s> ")
@@ -790,7 +796,7 @@ Also ensures the existence of matron output buffer (stored in
    ;; (norns-matron-install-script (s-chop-prefix ";install " cmd)))
 
    (:default
-    (norns--ws-send (s-replace "\n" "; " cmd)
+    (norns--ws-send (s-replace "\n" "; " (norns--remove-lua-comments cmd))
                     'norns-matron-ws-socket-alist
                     'norns-matron-buff-alist
                     #'norns--ensure-host-matron-ws-open
