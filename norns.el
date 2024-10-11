@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2022 Jordan Besly
 ;;
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;; Keywords: processes, terminals
 ;; URL: https://github.com/p3r7/norns.el
 ;; Package-Requires: ((emacs "27.1")(dash "2.17.0")(s "1.12.0")(f "0.20.0")(request "0.3.2")(websocket "1.13")(lua-mode "20221218.605"))
@@ -77,9 +77,10 @@
 
 (defvar norns-docker-container "norns-test-dummy" "Default norns docker container name.")
 (defvar norns-docker-http-port 5000 "Default norns docker HTTP port.")
-(defvar norns-local-mdns-domain "lan"
+(defvar norns-lan-domain nil
   "Default LAN mDNS (aka zeroconf), typically when accessing a
-docker instance of norns.")
+norns on a network that blocks mDNS.
+Routers generally have this set to \"lan\" or \"home\".")
 
 (defvar norns-screenshot-folder "/home/we/dust/" "Folder where to dump screenshots.")
 
@@ -453,28 +454,35 @@ it is fully qualified, i.e. w/ a TRAMP prefix if the connection is remote."
   "Get current buffer filesystem path."
   (norns--core-untrampify-path-maybe (norns--core-curr-fq-path)))
 
-(defun norns--sans-mdns (host)
-  "Remove any mDNS suffix from hostname HOST."
+(defun norns--host-sans-domain (host)
+  "Remove any mDNS suffix"
   (--> host
        (s-chop-suffix (concat "." norns-mdns-domain) it)
-       (s-chop-suffix (concat "." norns-local-mdns-domain) it)))
+       (if norns-lan-domain (s-chop-suffix (concat "." norns-lan-domain) it) it)))
 
-(defun norns--core-curr-host-sans-mdns ()
+(defun norns--host-with-domain (host)
+  (let ((domain (or norns-lan-domain norns-mdns-domain)))
+    (concat host "." domain)))
+
+(defun norns--core-curr-host-sans-domain ()
   "Get current hostname (for maiden / sc), sans mDNS domain suffix.
 Defaults to \"localhost\" if not a TRAMP path."
-  (cond
-   ((and (file-remote-p default-directory 'host)
-         (s-starts-with? "/docker:" default-directory))
-    "localhost")
+  (let ((remote-host (file-remote-p default-directory 'host)))
 
-   (t
-    (let ((remote-host (--> (file-remote-p default-directory 'host)
-                            (norns--sans-mdns it))))
-      (or remote-host "localhost")))))
+    (cond
+     ((and remote-host
+           (s-starts-with? "/docker:" default-directory))
+      "localhost")
+
+     (remote-host
+      (norns--host-sans-domain remote-host))
+
+     (t
+      "localhost"))))
 
 (defun norns--core-curr-host ()
   "Get current hostname (for maiden / sc)."
-  (concat (norns--core-curr-host-sans-mdns) "." norns-local-mdns-domain))
+  (norns--host-with-domain (norns--core-curr-host-sans-domain)))
 
 (defun norns--core-curr-http-port ()
   "Get current HTTP port (for maiden web)."
@@ -652,8 +660,7 @@ If `tramp-default-method' is \"docker\" we assume a local docker instance.
 In that case `norns-user' @ `norns-docker-container' gets used."
   (let* ((hostname (cond
                     ((string= tramp-default-method "docker") norns-docker-container)
-                    (t (concat norns-host (when norns-local-mdns-domain
-                                            (concat "." norns-local-mdns-domain)))))))
+                    (t (norns--host-with-domain norns-host)))))
     (concat "/" tramp-default-method ":"
             norns-user "@" hostname ":")))
 
@@ -930,8 +937,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
 (defun norns-docker-maiden-repl ()
   "Same as `norns-maiden-repl' but assuming a local docker instance.
 
-See values of `norns-docker-container' and
-`norns-local-mdns-domain' for the targeted instance."
+See values of `norns-docker-container' for the targeted instance."
   (interactive)
   (unless (assoc "docker" tramp-methods)
     (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))
@@ -1114,8 +1120,7 @@ Current norns is determined depending on the value of `norns-access-policy'."
 (defun norns-docker-sc-repl ()
   "Same as `norns-sc-repl' but assuming a local docker instance.
 
-See values of `norns-docker-container' and
-`norns-local-mdns-domain' for the targeted instance."
+See values of `norns-docker-container' for the targeted instance."
   (interactive)
   (unless (assoc "docker" tramp-methods)
     (user-error "Missing \"docker\" TRAMP method, plase install package `docker-tramp'."))

@@ -12,6 +12,46 @@ Several norns instances can be interacted with concurently (all buffers are name
 [![MELPA](https://melpa.org/packages/norns-badge.svg)](https://melpa.org/#/norns)
 
 
+## Installation
+
+```el
+(use-package norns
+  :config
+  (add-hook 'lua-mode-hook #'norns-mode-maybe-activate)
+  (add-hook 'sclang-mode-mode-hook #'norns-mode-maybe-activate))
+```
+
+Additionally one can map keyboard shortcuts:
+
+```el
+(use-package norns
+  :bind (
+         :map norns-mode-map
+         ;; NB: those keybindings are inspired by John Wiegley's
+         ("C-c e b" . norns-load-current-script)
+         ("C-c e r" . norns-send-selection)
+
+         :map norns-maiden-repl-mode-map
+         ("C-c e b" . norns-rerun)
+
+         :map norns-sc-repl-mode-map
+         ("C-." . norns-sc-stop))
+    ;; [...]
+    )
+```
+
+If you access a norns through a router / LAN, please set `norns-lan-domain` to your local LAN domain (defautl value is generally `lan` or `home`). Otheriwe emacs' `websocket` often has trouble connecting to the mDNS domain advertized by norns (typical error message: `websocket-open: norns.local/5555 Name or service not known`).
+
+```el
+(use-package norns
+  ;; [...]
+  :init
+  (setq norns-lan-domain "lan")
+  ;; [...]
+)
+```
+
+
 ## Commands
 
 All commands (unless specified otherwise) will analyze if currently visited file is on a norns.
@@ -75,34 +115,6 @@ Take a screenshot of norns screen. Save it on norns itself under `norns-screensh
 `norns-screen-dump` does the same but is lower level. It directly dumps what is in the screen memory buffer and doesn't perform scaling / quantized greyscale conversion to match how it appears IRL.
 
 
-## Installation
-
-```el
-(use-package norns
-  :config
-  (add-hook 'lua-mode-hook #'norns-mode-maybe-activate)
-  (add-hook 'sclang-mode-mode-hook #'norns-mode-maybe-activate))
-```
-
-Additionally one can map keyboard shortcuts:
-
-```el
-(use-package norns
-  :bind (
-         :map norns-mode-map
-         ("C-c e b" . norns-load-current-script)
-         ("C-c e r" . norns-send-selection)
-
-         :map norns-maiden-repl-mode-map
-         ("C-c e b" . norns-rerun)
-
-         :map norns-sc-repl-mode-map
-         ("C-." . norns-sc-stop))
-    ;; [...]
-    )
-```
-
-
 ## Configuration
 
 Several norns can be managed by this package.
@@ -111,7 +123,7 @@ Default value of `norns-access-policy` (`:current-fallback-default`) makes the e
 
 To always use the default instance (absolute lookup), change this value to `:default`. Otherwise, to only try the currently visited instance (relative lookup) set it to `:current`.
 
-The default norns instance declaration is accessible through vars `norns-host` & `norns-mdns-domain`.
+The default norns instance declaration is accessible through vars `norns-host`, `norns-mdns-domain` and `norns-local-mdns-domain`. `norns-mdns-domain` is the mDNS domain advertized by norns (typically `local`) and `norns-local-mdns-domain` is the one of the local network that both norns and your computer connect to (generally `lan` or `home`).
 
 On command execution, the maiden or SuperCollider buffer (of the corresponding instance) will pop to current frame (can be disabled by setting `norns-repl-switch-on-cmd` to `nil`) w/ method `norns-repl-switch-fn` (defaults to `switch-to-buffer-other-window`).
 
